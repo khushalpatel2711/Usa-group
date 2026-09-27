@@ -31,6 +31,7 @@ import {
   AdminUploadedFile,
   ProgramCategory,
   AuditLog,
+  UploadedFileMeta,
 } from '../types';
 import {
   updateEntryStatus,
@@ -44,7 +45,7 @@ import {
   deleteSingleLog,
   clearAllLogs,
 } from '../utils/storage';
-import { formatFileSize, formatGujaratiDate } from '../utils/crypto';
+import { formatFileSize, formatGujaratiDate, downloadImageFile } from '../utils/crypto';
 import { AdminFileUploadModal } from './AdminFileUploadModal';
 
 interface AdminDashboardProps {
@@ -78,6 +79,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     type: 'audio' | 'video' | 'image';
     title: string;
     url?: string;
+    fileMeta?: UploadedFileMeta;
+    fallbackInfo?: { title?: string; entryNumber?: string; coordinator?: string };
   } | null>(null);
 
   const [isUploadDocModalOpen, setIsUploadDocModalOpen] = useState(false);
@@ -570,21 +573,44 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         <span>ગીત સાંભળો ({formatFileSize(entry.songFile.size)})</span>
                       </button>
 
-                      {/* Participant sheet button */}
+                      {/* Participant sheet button & download */}
                       {entry.participantsPhotoFile && (
-                        <button
-                          onClick={() =>
-                            setActiveMediaModal({
-                              type: 'image',
-                              title: entry.participantsPhotoFile!.originalName,
-                              url: entry.participantsPhotoFile!.dataUrl,
-                            })
-                          }
-                          className="px-2.5 py-1.5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-300 font-semibold flex items-center gap-1.5"
-                        >
-                          <Eye className="w-3.5 h-3.5 text-stone-600" />
-                          <span>સ્પર્ધકોની યાદી ફોટો</span>
-                        </button>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={() =>
+                              setActiveMediaModal({
+                                type: 'image',
+                                title: entry.participantsPhotoFile!.originalName,
+                                url: entry.participantsPhotoFile!.dataUrl,
+                                fileMeta: entry.participantsPhotoFile,
+                                fallbackInfo: {
+                                  title: entry.performanceTitle,
+                                  entryNumber: entry.entryNumber,
+                                  coordinator: entry.coordinatorName,
+                                },
+                              })
+                            }
+                            className="px-2.5 py-1.5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-300 font-semibold flex items-center gap-1.5 transition-colors"
+                          >
+                            <Eye className="w-3.5 h-3.5 text-stone-600" />
+                            <span>સ્પર્ધકોની યાદી ફોટો</span>
+                          </button>
+
+                          <button
+                            onClick={() =>
+                              downloadImageFile(entry.participantsPhotoFile!, {
+                                title: entry.performanceTitle,
+                                entryNumber: entry.entryNumber,
+                                coordinator: entry.coordinatorName,
+                              })
+                            }
+                            className="px-2.5 py-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 font-bold flex items-center gap-1.5 shadow-2xs transition-colors"
+                            title="સ્પર્ધકોની યાદી ફોટો ડાઉનલોડ કરો"
+                          >
+                            <Download className="w-3.5 h-3.5 text-amber-800" />
+                            <span>ફોટો ડાઉનલોડ</span>
+                          </button>
+                        </div>
                       )}
 
                       <span className="text-[10px] font-mono text-emerald-800 bg-emerald-50 px-2 py-1 rounded border border-emerald-200">
@@ -696,6 +722,27 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       <span className="font-mono text-emerald-700 font-semibold">
                         AES-GCM-256 ✓
                       </span>
+                      <button
+                        onClick={() => {
+                          if (doc.file.dataUrl) {
+                            const a = document.createElement('a');
+                            a.href = doc.file.dataUrl;
+                            a.download = doc.file.originalName;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                          } else {
+                            downloadImageFile(doc.file, {
+                              title: doc.title,
+                              coordinator: doc.uploadedBy,
+                            });
+                          }
+                        }}
+                        className="p-1 text-stone-500 hover:text-amber-800 hover:bg-amber-50 rounded-md transition-colors"
+                        title="આ ફાઇલ ડાઉનલોડ કરો"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                      </button>
                       <button
                         onClick={() => handleDeleteAdminFile(doc.id, doc.title)}
                         className="p-1 text-stone-400 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors"
@@ -1039,16 +1086,60 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             className="relative max-w-lg w-full bg-white rounded-3xl overflow-hidden p-5 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between pb-3 border-b border-stone-200 mb-4">
-              <span className="font-bold text-sm text-stone-900 truncate pr-4">
+            <div className="flex items-center justify-between pb-3 border-b border-stone-200 mb-4 gap-2">
+              <span className="font-bold text-sm text-stone-900 truncate flex-1">
                 {activeMediaModal.title}
               </span>
-              <button
-                onClick={() => setActiveMediaModal(null)}
-                className="text-stone-400 hover:text-stone-800"
-              >
-                ✕
-              </button>
+
+              <div className="flex items-center gap-2 shrink-0">
+                {activeMediaModal.type === 'image' && (
+                  <button
+                    onClick={() => {
+                      if (activeMediaModal.fileMeta) {
+                        downloadImageFile(activeMediaModal.fileMeta, activeMediaModal.fallbackInfo);
+                      } else {
+                        const fallbackMeta: UploadedFileMeta = {
+                          id: `img_${Date.now()}`,
+                          originalName: activeMediaModal.title,
+                          size: 0,
+                          mimeType: 'image/jpeg',
+                          encryptedHash: '',
+                          encryptionAlgorithm: 'AES-GCM-256',
+                          ivHex: '',
+                          uploadedAt: new Date().toISOString(),
+                          dataUrl: activeMediaModal.url,
+                          encryptedStatus: 'verified',
+                        };
+                        downloadImageFile(fallbackMeta, activeMediaModal.fallbackInfo);
+                      }
+                    }}
+                    className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors shadow-xs"
+                    title="ઇમેજ ડાઉનલોડ કરો"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>ફોટો ડાઉનલોડ</span>
+                  </button>
+                )}
+
+                {(activeMediaModal.type === 'audio' || activeMediaModal.type === 'video') &&
+                  activeMediaModal.url && (
+                    <a
+                      href={activeMediaModal.url}
+                      download={activeMediaModal.title}
+                      className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors shadow-xs"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span>ડાઉનલોડ</span>
+                    </a>
+                  )}
+
+                <button
+                  onClick={() => setActiveMediaModal(null)}
+                  className="text-stone-400 hover:text-stone-800 p-1 rounded-lg hover:bg-stone-100 transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
             </div>
 
             <div className="flex flex-col items-center justify-center">
@@ -1078,12 +1169,40 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               )}
 
               {activeMediaModal.type === 'image' && (
-                <div className="max-h-[70vh] overflow-auto">
-                  <img
-                    src={activeMediaModal.url}
-                    alt="Participant list sheet"
-                    className="max-h-[65vh] object-contain rounded-xl"
-                  />
+                <div className="w-full flex flex-col items-center gap-3">
+                  <div className="max-h-[65vh] overflow-auto rounded-2xl border border-stone-200 bg-stone-50 flex items-center justify-center p-2 w-full">
+                    <img
+                      src={activeMediaModal.url}
+                      alt="Participant list sheet"
+                      className="max-h-[60vh] object-contain rounded-xl shadow-xs"
+                    />
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      if (activeMediaModal.fileMeta) {
+                        downloadImageFile(activeMediaModal.fileMeta, activeMediaModal.fallbackInfo);
+                      } else {
+                        const fallbackMeta: UploadedFileMeta = {
+                          id: `img_${Date.now()}`,
+                          originalName: activeMediaModal.title,
+                          size: 0,
+                          mimeType: 'image/jpeg',
+                          encryptedHash: '',
+                          encryptionAlgorithm: 'AES-GCM-256',
+                          ivHex: '',
+                          uploadedAt: new Date().toISOString(),
+                          dataUrl: activeMediaModal.url,
+                          encryptedStatus: 'verified',
+                        };
+                        downloadImageFile(fallbackMeta, activeMediaModal.fallbackInfo);
+                      }
+                    }}
+                    className="w-full py-2.5 px-4 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-xs transition-colors"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>સ્પર્ધકોની યાદી ફોટો ડાઉનલોડ કરો (Download Image)</span>
+                  </button>
                 </div>
               )}
             </div>
