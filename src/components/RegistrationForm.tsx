@@ -61,9 +61,6 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
   const [preIntroDetails, setPreIntroDetails] = useState('');
   const [ledScreenRequired, setLedScreenRequired] = useState<'YES' | 'NO' | ''>('');
 
-  // Dual-factor confirmation
-  const [termsAgreed, setTermsAgreed] = useState(false);
-
   // Validation errors
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -129,10 +126,6 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
 
     if (!songFile) {
       newErrors.songFile = 'કાર્યક્રમનું ગીત (ઓડિયો અથવા વિડિયો ફાઇલ) અપલોડ કરવી ફરજિયાત છે.';
-    }
-
-    if (!termsAgreed) {
-      newErrors.terms = 'નિયમો અને સમાજની મર્યાદા પાળવાની સહમતી જરૂરી છે.';
     }
 
     setErrors(newErrors);
@@ -683,30 +676,6 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
 
             {errors.songFile && (
               <p className="text-xs text-red-600 font-medium">{errors.songFile}</p>
-            )}
-          </div>
-
-          {/* Dual-Factor Security & Terms Confirmation */}
-          <div id="field-terms" className="p-4 bg-amber-50/60 border border-amber-300 rounded-2xl space-y-3">
-            <div className="flex items-center gap-2 text-amber-950 font-bold text-xs sm:text-sm">
-              <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0" />
-              <span>ડ્યુઅલ-ફેક્ટર પ્રમાણીકરણ અને નિયમોની બાંહેધરી</span>
-            </div>
-
-            <label className="flex items-start gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={termsAgreed}
-                onChange={(e) => setTermsAgreed(e.target.checked)}
-                className="w-4 h-4 text-amber-700 rounded border-stone-300 focus:ring-amber-500 mt-1 shrink-0"
-              />
-              <span className="text-xs sm:text-[13px] text-stone-700 leading-relaxed">
-                હું ખાતરી આપું છું કે અમારા કાર્યક્રમમાં સમાજની મર્યાદા જળવાશે. અમે સાંસ્કૃતિક સમિતિને નિયત સમયે રિહર્સલ બતાવીશું અને સમિતિનો નિર્ણય આખરી રહેશે.
-              </span>
-            </label>
-
-            {errors.terms && (
-              <p className="text-xs text-red-600 font-medium">{errors.terms}</p>
             )}
           </div>
 
