@@ -82,6 +82,23 @@ export const NoticeBoard: React.FC<NoticeBoardProps> = ({ lang }) => {
             </div>
           </div>
 
+          <div className="flex items-start gap-3 bg-white/80 p-3.5 rounded-xl border border-amber-200/70">
+            <span className="flex items-center justify-center w-6 h-6 rounded-full bg-amber-600 text-white font-bold text-xs shrink-0 mt-0.5">
+              ૪
+            </span>
+            <div className="font-medium text-stone-900">
+              <span className="font-semibold text-amber-950">
+                એક મોબાઈલ નંબર અને નામ પરથી માત્ર ૧ જ એન્ટ્રી માન્ય ગણાશે.
+              </span>
+              <p className="text-xs sm:text-sm text-stone-700 mt-1">
+                જો સાંસ્કૃતિક સમિતિ / એડમિન દ્વારા તમારી અગાઉની એન્ટ્રી <strong>નામંજૂર (Reject)</strong> કરવામાં આવશે, તો જ તમે તે મોબાઈલ નંબર અને નામ પરથી નવી એન્ટ્રી ભરી શકશો.
+              </p>
+              <p className="text-xs text-stone-500 mt-0.5">
+                (Only a single entry per mobile number & name is allowed. A new submission is permitted only if the previous entry is rejected by the committee.)
+              </p>
+            </div>
+          </div>
+
         </div>
 
         {/* Contact Helpline Section */}

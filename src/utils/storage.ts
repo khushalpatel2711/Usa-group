@@ -131,6 +131,88 @@ export function deleteEntry(id: string): RegistrationEntry[] {
   return updated;
 }
 
+export interface DuplicateCheckResult {
+  isDuplicate: boolean;
+  existingEntry?: RegistrationEntry;
+  reason?: 'phone' | 'name' | 'both';
+  message?: string;
+}
+
+/**
+ * Checks if an active (non-rejected) entry already exists with the same mobile number or coordinator name.
+ * Rule: One mobile number and name can make a single entry only.
+ * If the admin rejects the entry (status === 'rejected'), then only can the same mobile number and name submit a new entry.
+ */
+export function checkDuplicateEntry(name: string, phone: string, currentEntryId?: string): DuplicateCheckResult {
+  const entries = getStoredEntries();
+  const cleanPhone = phone.replace(/\D/g, '').slice(-10);
+  const cleanName = name.trim().toLowerCase();
+
+  // If neither phone nor name is provided yet, no conflict
+  if (!cleanPhone && !cleanName) {
+    return { isDuplicate: false };
+  }
+
+  // Look for any active entry that is NOT rejected
+  const duplicate = entries.find((entry) => {
+    // If editing the same entry, ignore itself
+    if (currentEntryId && entry.id === currentEntryId) {
+      return false;
+    }
+
+    // CRITICAL: If the entry was REJECTED by admin, it does NOT block a new entry!
+    if (entry.status === 'rejected') {
+      return false;
+    }
+
+    const existingCleanPhone = (entry.coordinatorPhone || '').replace(/\D/g, '').slice(-10);
+    const existingCleanName = (entry.coordinatorName || '').trim().toLowerCase();
+
+    const phoneMatches = Boolean(cleanPhone && existingCleanPhone && cleanPhone === existingCleanPhone);
+    const nameMatches = Boolean(cleanName && existingCleanName && cleanName === existingCleanName);
+
+    return phoneMatches || nameMatches;
+  });
+
+  if (!duplicate) {
+    return { isDuplicate: false };
+  }
+
+  const existingCleanPhone = (duplicate.coordinatorPhone || '').replace(/\D/g, '').slice(-10);
+  const existingCleanName = (duplicate.coordinatorName || '').trim().toLowerCase();
+  const phoneMatches = Boolean(cleanPhone && existingCleanPhone && cleanPhone === existingCleanPhone);
+  const nameMatches = Boolean(cleanName && existingCleanName && cleanName === existingCleanName);
+
+  let reason: 'phone' | 'name' | 'both' = 'both';
+  if (phoneMatches && !nameMatches) reason = 'phone';
+  else if (!phoneMatches && nameMatches) reason = 'name';
+
+  const statusGujarati =
+    duplicate.status === 'confirmed'
+      ? 'કન્ફર્મ (Confirmed)'
+      : duplicate.status === 'script_approved'
+      ? 'સ્ક્રિપ્ટ મંજૂર (Script Approved)'
+      : duplicate.status === 'rehearsal_scheduled'
+      ? 'રિહર્સલ નિયત (Rehearsal Scheduled)'
+      : 'ચકાસણી હેઠળ પેન્ડિંગ (Pending Review)';
+
+  let message = '';
+  if (reason === 'both') {
+    message = `આ નામ "${duplicate.coordinatorName}" અને મોબાઈલ નંબર (${duplicate.coordinatorPhone}) પરથી પહેલેથી એન્ટ્રી નોંધાયેલ છે (ટોકન: ${duplicate.entryNumber}, ગીત: "${duplicate.performanceTitle}", સ્થિતિ: ${statusGujarati}). એક મોબાઈલ નંબર અને નામ પરથી માત્ર ૧ જ એન્ટ્રી માન્ય છે. જો એડમિન દ્વારા આ અગાઉની એન્ટ્રી રીજેક્ટ (Reject) કરવામાં આવે, તો જ નવી એન્ટ્રી કરી શકાશે.`;
+  } else if (reason === 'phone') {
+    message = `આ મોબાઈલ નંબર (${duplicate.coordinatorPhone}) પરથી પહેલેથી એન્ટ્રી નોંધાયેલ છે (ટોકન: ${duplicate.entryNumber}, ગીત: "${duplicate.performanceTitle}", સ્થિતિ: ${statusGujarati}). એક મોબાઈલ નંબર પરથી માત્ર ૧ જ એન્ટ્રી માન્ય છે. જો એડમિન દ્વારા તે એન્ટ્રી રીજેક્ટ (Reject) થાય, તો જ આ નંબર પરથી નવી એન્ટ્રી કરી શકાશે.`;
+  } else {
+    message = `આ નામ "${duplicate.coordinatorName}" પરથી પહેલેથી એન્ટ્રી નોંધાયેલ છે (ટોકન: ${duplicate.entryNumber}, ગીત: "${duplicate.performanceTitle}", સ્થિતિ: ${statusGujarati}). એક વ્યક્તિના નામ પરથી માત્ર ૧ જ એન્ટ્રી માન્ય છે. જો એડમિન દ્વારા તે એન્ટ્રી રીજેક્ટ (Reject) થાય, તો જ નવી એન્ટ્રી કરી શકાશે.`;
+  }
+
+  return {
+    isDuplicate: true,
+    existingEntry: duplicate,
+    reason,
+    message,
+  };
+}
+
 export function saveEntry(entry: RegistrationEntry): RegistrationEntry {
   const current = getStoredEntries();
   const updated = [entry, ...current.filter(e => e.id !== entry.id)];

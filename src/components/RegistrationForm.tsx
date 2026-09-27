@@ -22,7 +22,7 @@ import {
   RegistrationEntry,
 } from '../types';
 import { FileUploadWithProgress } from './FileUploadWithProgress';
-import { saveEntry } from '../utils/storage';
+import { saveEntry, checkDuplicateEntry, DuplicateCheckResult } from '../utils/storage';
 
 interface RegistrationFormProps {
   onSubmissionSuccess: (entry: RegistrationEntry) => void;
@@ -55,6 +55,41 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
   // Coordinator
   const [coordinatorName, setCoordinatorName] = useState('');
   const [coordinatorPhone, setCoordinatorPhone] = useState('');
+  const [duplicateCheck, setDuplicateCheck] = useState<DuplicateCheckResult | null>(null);
+
+  // Real-time duplicate check
+  const handleCheckDuplicate = (name: string, phone: string) => {
+    const cleanPh = phone.replace(/\D/g, '');
+    if (cleanPh.length === 10 || (name.trim().length >= 3 && cleanPh.length >= 10)) {
+      const res = checkDuplicateEntry(name, phone);
+      setDuplicateCheck(res.isDuplicate ? res : null);
+    } else {
+      setDuplicateCheck(null);
+    }
+  };
+
+  const handleNameChange = (val: string) => {
+    setCoordinatorName(val);
+    handleCheckDuplicate(val, coordinatorPhone);
+    if (errors.coordinatorName || errors.duplicate) {
+      const updated = { ...errors };
+      delete updated.coordinatorName;
+      delete updated.duplicate;
+      setErrors(updated);
+    }
+  };
+
+  const handlePhoneChange = (val: string) => {
+    const cleaned = val.replace(/\D/g, '');
+    setCoordinatorPhone(cleaned);
+    handleCheckDuplicate(coordinatorName, cleaned);
+    if (errors.coordinatorPhone || errors.duplicate) {
+      const updated = { ...errors };
+      delete updated.coordinatorPhone;
+      delete updated.duplicate;
+      setErrors(updated);
+    }
+  };
 
   // Questions
   const [preIntroRequired, setPreIntroRequired] = useState<'YES' | 'NO' | ''>('');
@@ -112,8 +147,24 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
       newErrors.coordinatorName = 'કાર્યક્રમ તૈયાર કરાવનાર નું નામ લખો.';
     }
 
-    if (!coordinatorPhone.trim() || coordinatorPhone.replace(/\D/g, '').length < 10) {
+    const cleanPh = coordinatorPhone.replace(/\D/g, '');
+    if (!coordinatorPhone.trim() || cleanPh.length < 10) {
       newErrors.coordinatorPhone = 'માન્ય ૧૦ આંકડાનો મોબાઈલ નંબર લખો.';
+    }
+
+    // Single entry rule validation:
+    // One mobile number and name can make single entry only.
+    // If admin rejects the entry, then only can the same mobile number and name make a new entry.
+    if (coordinatorName.trim() && cleanPh.length === 10) {
+      const dup = checkDuplicateEntry(coordinatorName, coordinatorPhone);
+      if (dup.isDuplicate) {
+        newErrors.duplicate =
+          dup.message ||
+          'આ મોબાઈલ નંબર અથવા નામ પરથી પહેલેથી એન્ટ્રી નોંધાયેલ છે.';
+        newErrors.coordinatorPhone =
+          'આ મોબાઈલ નંબર પરથી પહેલેથી એન્ટ્રી નોંધાયેલ છે. એક મોબાઈલ નંબર પરથી માત્ર ૧ જ એન્ટ્રી માન્ય છે.';
+        setDuplicateCheck(dup);
+      }
     }
 
     if (!preIntroRequired) {
@@ -515,7 +566,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                   <input
                     type="text"
                     value={coordinatorName}
-                    onChange={(e) => setCoordinatorName(e.target.value)}
+                    onChange={(e) => handleNameChange(e.target.value)}
                     placeholder="દા.ત. રમેશભાઈ પટેલ / કવિતાબેન"
                     className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-stone-300 focus:border-amber-600 focus:ring-2 focus:ring-amber-500/20 text-sm font-medium"
                     required
@@ -536,7 +587,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                     type="tel"
                     maxLength={10}
                     value={coordinatorPhone}
-                    onChange={(e) => setCoordinatorPhone(e.target.value.replace(/\D/g, ''))}
+                    onChange={(e) => handlePhoneChange(e.target.value)}
                     placeholder="દા.ત. 9825012345"
                     className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-stone-300 focus:border-amber-600 focus:ring-2 focus:ring-amber-500/20 text-sm font-mono font-medium"
                     required
@@ -547,6 +598,53 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                 )}
               </div>
             </div>
+
+            {/* Duplicate Entry Restriction Warning Card */}
+            {duplicateCheck?.isDuplicate && (
+              <div className="mt-4 p-4 bg-red-50/95 border-2 border-red-400 rounded-2xl space-y-2.5 text-red-950">
+                <div className="flex items-center gap-2 font-bold text-sm text-red-800">
+                  <AlertCircle className="w-5 h-5 text-red-600 shrink-0" />
+                  <span>સિંગલ એન્ટ્રી પ્રતિબંધ (Single Entry Restriction)</span>
+                </div>
+                <p className="text-xs sm:text-[13px] leading-relaxed font-medium text-red-900">
+                  {duplicateCheck.message}
+                </p>
+                {duplicateCheck.existingEntry && (
+                  <div className="p-3 bg-white/90 border border-red-200 rounded-xl text-xs space-y-1.5 shadow-2xs">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-stone-600">નોંધાયેલ ટોકન:</span>
+                      <span className="font-mono font-bold text-amber-900 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                        {duplicateCheck.existingEntry.entryNumber}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-stone-600">કાર્યક્રમ / ગીત:</span>
+                      <span className="font-bold text-stone-900">
+                        {duplicateCheck.existingEntry.performanceTitle}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-stone-600">વર્તમાન સ્થિતિ:</span>
+                      <span className="font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                        {duplicateCheck.existingEntry.status === 'confirmed'
+                          ? 'કન્ફર્મ (Confirmed)'
+                          : duplicateCheck.existingEntry.status === 'script_approved'
+                          ? 'સ્ક્રિપ્ટ મંજૂર (Script Approved)'
+                          : duplicateCheck.existingEntry.status === 'rehearsal_scheduled'
+                          ? 'રિહર્સલ નિયત'
+                          : 'ચકાસણી હેઠળ (Pending)'}
+                      </span>
+                    </div>
+                  </div>
+                )}
+                <div className="p-2.5 bg-red-100/70 border border-red-300 rounded-xl text-xs text-red-900 font-semibold flex items-start gap-2">
+                  <span className="text-base leading-none">ℹ️</span>
+                  <span>
+                    <strong>સમિતિ નિયમ:</strong> જો એડમિન દ્વારા આ અગાઉની એન્ટ્રી <strong>નામંજૂર (Reject)</strong> કરવામાં આવશે, તો જ તમે આ મોબાઈલ નંબર અને નામ પરથી નવી એન્ટ્રી ભરી શકશો.
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* 7. કાર્યક્રમ શરૂ થાય તે પહેલા કાર્યક્રમ વિષે કઈ માહિતી આપવી છે? */}
@@ -678,6 +776,21 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
               <p className="text-xs text-red-600 font-medium">{errors.songFile}</p>
             )}
           </div>
+
+          {/* Duplicate Block Alert near Submit */}
+          {(errors.duplicate || duplicateCheck?.isDuplicate) && (
+            <div className="p-4 bg-red-50 border-2 border-red-400 rounded-2xl flex items-start gap-3 text-red-900 shadow-2xs">
+              <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+              <div className="text-xs sm:text-sm font-medium space-y-1">
+                <p className="font-bold text-red-950">
+                  સિંગલ એન્ટ્રી પ્રતિબંધ: આ મોબાઈલ નંબર અથવા નામ પરથી પહેલેથી એન્ટ્રી નોંધાયેલ છે!
+                </p>
+                <p className="text-xs text-red-800">
+                  નવી એન્ટ્રી માત્ર ત્યારે જ કરી શકાશે જો સમિતિ એડમિન દ્વારા તમારી અગાઉની એન્ટ્રી <strong>નામંજૂર (Reject)</strong> કરવામાં આવે.
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Submission Button */}
           <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-4">
