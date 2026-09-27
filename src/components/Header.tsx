@@ -128,7 +128,7 @@ export const Header: React.FC<HeaderProps> = ({
                 <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
                 <span className="hidden sm:inline">{adminUser.name.split(' ')[0]}</span>
                 <span className="text-[10px] bg-amber-200/80 px-1.5 py-0.5 rounded text-amber-900">
-                  2FA Active
+                  Admin Active
                 </span>
               </button>
 

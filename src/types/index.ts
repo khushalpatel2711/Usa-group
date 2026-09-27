@@ -22,7 +22,7 @@ export interface RegistrationEntry {
   id: string;
   entryNumber: string; // e.g. "DUS-2026-001"
   submittedAt: string;
-  email: string;
+  email?: string;
   category: ProgramCategory;
   customCategory?: string;
   performanceTitle: string; // કાર્યક્રમ નું નામ અથવા ગીત ના બોલ
@@ -73,4 +73,20 @@ export interface UploadProgressState {
   isEncrypting: boolean;
   encryptionProgress: number;
   error?: string;
+}
+
+export interface AuditLog {
+  id: string;
+  timestamp: string;
+  action:
+    | 'entry_created'
+    | 'status_updated'
+    | 'entry_deleted'
+    | 'file_uploaded'
+    | 'file_deleted'
+    | 'admin_login'
+    | 'all_entries_cleared'
+    | 'system';
+  details: string;
+  performedBy: string;
 }

@@ -22,17 +22,27 @@ import {
   ChevronDown,
   Layers,
   Lock,
+  Trash2,
+  History,
 } from 'lucide-react';
 import {
   RegistrationEntry,
   AdminUser,
   AdminUploadedFile,
   ProgramCategory,
+  AuditLog,
 } from '../types';
 import {
   updateEntryStatus,
   exportEntriesToCSV,
   getStoredAdminFiles,
+  clearAllEntries,
+  deleteEntry,
+  deleteAdminFile,
+  clearAllAdminFiles,
+  getStoredLogs,
+  deleteSingleLog,
+  clearAllLogs,
 } from '../utils/storage';
 import { formatFileSize, formatGujaratiDate } from '../utils/crypto';
 import { AdminFileUploadModal } from './AdminFileUploadModal';
@@ -53,7 +63,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
-  const [activeTab, setActiveTab] = useState<'entries' | 'admin_files' | 'schedule'>('entries');
+  const [activeTab, setActiveTab] = useState<'entries' | 'admin_files' | 'schedule' | 'logs'>('entries');
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>(getStoredLogs());
+  const [logSearchQuery, setLogSearchQuery] = useState('');
 
   // Modal states
   const [selectedEntryForReview, setSelectedEntryForReview] = useState<RegistrationEntry | null>(null);
@@ -77,8 +89,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       e.performanceTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
       e.coordinatorName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       e.coordinatorPhone.includes(searchQuery) ||
-      e.entryNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      e.email.toLowerCase().includes(searchQuery.toLowerCase());
+      e.entryNumber.toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesCategory =
       selectedCategory === 'all' || e.category === selectedCategory;
@@ -87,6 +98,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       selectedStatus === 'all' || e.status === selectedStatus;
 
     return matchesSearch && matchesCategory && matchesStatus;
+  });
+
+  // Filter logs
+  const filteredLogs = auditLogs.filter((log) => {
+    if (!logSearchQuery.trim()) return true;
+    const q = logSearchQuery.toLowerCase();
+    return (
+      log.details.toLowerCase().includes(q) ||
+      log.performedBy.toLowerCase().includes(q) ||
+      log.action.toLowerCase().includes(q)
+    );
   });
 
   // Calculate statistics
@@ -116,10 +138,99 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     );
     setSelectedEntryForReview(null);
     onRefreshEntries();
+    setAuditLogs(getStoredLogs());
   };
+
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    confirmText: string;
+    onConfirm: () => void;
+  } | null>(null);
 
   const handleAdminFileUploaded = (file: AdminUploadedFile) => {
     setAdminFiles(getStoredAdminFiles());
+    setAuditLogs(getStoredLogs());
+  };
+
+  const handleClearAllEntries = () => {
+    setConfirmDialog({
+      isOpen: true,
+      title: 'તમામ એન્ટ્રીઓ સાફ કરો (Clear All Entries)',
+      message: 'શું તમે ખરેખર તમામ રજીસ્ટ્રેશન એન્ટ્રીઓ ડિલીટ કરવા માંગો છો? બધો રજીસ્ટ્રેશન ડેટા ખાલી થઈ જશે.',
+      confirmText: 'હા, બધી એન્ટ્રીઓ ડિલીટ કરો',
+      onConfirm: () => {
+        clearAllEntries();
+        onRefreshEntries();
+        setAuditLogs(getStoredLogs());
+        setConfirmDialog(null);
+      },
+    });
+  };
+
+  const handleDeleteSingleEntry = (id: string, title: string) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: 'એન્ટ્રી ડિલીટ કરો (Delete Entry)',
+      message: `શું તમે "${title}" એન્ટ્રી ડિલીટ કરવા માંગો છો?`,
+      confirmText: 'ડિલીટ કરો',
+      onConfirm: () => {
+        deleteEntry(id);
+        onRefreshEntries();
+        setAuditLogs(getStoredLogs());
+        setConfirmDialog(null);
+      },
+    });
+  };
+
+  const handleDeleteAdminFile = (id: string, title: string) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: 'દસ્તાવેજ ડિલીટ કરો',
+      message: `શું તમે "${title}" દસ્તાવેજ ડિલીટ કરવા માંગો છો?`,
+      confirmText: 'ડિલીટ કરો',
+      onConfirm: () => {
+        const updated = deleteAdminFile(id);
+        setAdminFiles(updated);
+        setAuditLogs(getStoredLogs());
+        setConfirmDialog(null);
+      },
+    });
+  };
+
+  const handleClearAllAdminFiles = () => {
+    setConfirmDialog({
+      isOpen: true,
+      title: 'તમામ સમિતિ ફાઇલો સાફ કરો',
+      message: 'શું તમે ખરેખર તમામ સમિતિ દસ્તાવેજો ડિલીટ કરવા માંગો છો?',
+      confirmText: 'હા, બધી ફાઇલો ડિલીટ કરો',
+      onConfirm: () => {
+        clearAllAdminFiles();
+        setAdminFiles([]);
+        setAuditLogs(getStoredLogs());
+        setConfirmDialog(null);
+      },
+    });
+  };
+
+  const handleDeleteSingleLog = (id: string) => {
+    const updated = deleteSingleLog(id);
+    setAuditLogs(updated);
+  };
+
+  const handleClearAllLogs = () => {
+    setConfirmDialog({
+      isOpen: true,
+      title: 'તમામ લૉગ્સ સાફ કરો (Delete All Logs)',
+      message: 'શું તમે ખરેખર બધા સિસ્ટમ & એક્ટિવિટી લૉગ્સ ડિલીટ કરવા માંગો છો? આ ક્રિયા પાછી ફેરવી શકાશે નહીં.',
+      confirmText: 'હા, બધા લૉગ્સ ડિલીટ કરો',
+      onConfirm: () => {
+        clearAllLogs();
+        setAuditLogs([]);
+        setConfirmDialog(null);
+      },
+    });
   };
 
   return (
@@ -131,7 +242,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           <div>
             <div className="flex items-center gap-2 text-xs font-semibold text-amber-400 uppercase tracking-widest">
               <ShieldCheck className="w-4 h-4 text-emerald-400" />
-              <span>ડ્યુઅલ-ફેક્ટર વેરિફાઇડ એડમિન સેશન (2FA Active)</span>
+              <span>સુરક્ષિત એડમિન સેશન (Admin Session Active)</span>
             </div>
             <h2 className="text-xl sm:text-2xl md:text-3xl font-bold font-festive mt-1">
               દશેરા સાંસ્કૃતિક સમિતિ મેનેજમેન્ટ પોર્ટલ
@@ -153,7 +264,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
             <button
               onClick={() => exportEntriesToCSV(entries)}
-              className="px-4 py-2 text-xs font-bold text-stone-900 bg-amber-100 hover:bg-amber-200 rounded-xl shadow-xs transition-colors flex items-center gap-1.5"
+              disabled={entries.length === 0}
+              className="px-4 py-2 text-xs font-bold text-stone-900 bg-amber-100 hover:bg-amber-200 disabled:opacity-40 rounded-xl shadow-xs transition-colors flex items-center gap-1.5"
             >
               <Download className="w-4 h-4" />
               <span>Excel / CSV ડાઉનલોડ</span>
@@ -161,11 +273,34 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
             <button
               onClick={() => window.print()}
-              className="px-4 py-2 text-xs font-bold text-stone-300 hover:text-white bg-white/10 hover:bg-white/20 rounded-xl transition-colors flex items-center gap-1.5"
+              disabled={entries.length === 0}
+              className="px-4 py-2 text-xs font-bold text-stone-300 hover:text-white disabled:opacity-40 bg-white/10 hover:bg-white/20 rounded-xl transition-colors flex items-center gap-1.5"
             >
               <Printer className="w-4 h-4" />
               <span>પ્રિન્ટ શેડ્યૂલ</span>
             </button>
+
+            {entries.length > 0 && (
+              <button
+                onClick={handleClearAllEntries}
+                className="px-3.5 py-2 text-xs font-bold text-red-300 hover:text-white bg-red-950/60 hover:bg-red-800 border border-red-500/40 rounded-xl shadow-xs transition-colors flex items-center gap-1.5"
+                title="તમામ એન્ટ્રીઓ ડિલીટ કરો"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>તમામ એન્ટ્રીઓ સાફ કરો</span>
+              </button>
+            )}
+
+            {auditLogs.length > 0 && (
+              <button
+                onClick={handleClearAllLogs}
+                className="px-3.5 py-2 text-xs font-bold text-amber-200 hover:text-white bg-amber-950/60 hover:bg-amber-900 border border-amber-500/40 rounded-xl shadow-xs transition-colors flex items-center gap-1.5"
+                title="તમામ એક્ટિવિટી લૉગ્સ ડિલીટ કરો"
+              >
+                <History className="w-4 h-4" />
+                <span>તમામ લૉગ્સ સાફ કરો</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -199,7 +334,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       </div>
 
       {/* Tabs navigation */}
-      <div className="flex items-center gap-2 mb-6 border-b border-stone-200 pb-3">
+      <div className="flex items-center gap-2 mb-6 border-b border-stone-200 pb-3 flex-wrap">
         <button
           onClick={() => setActiveTab('entries')}
           className={`px-4 py-2 text-xs sm:text-sm font-bold rounded-xl transition-colors flex items-center gap-2 ${
@@ -234,6 +369,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         >
           <Calendar className="w-4 h-4" />
           <span>સ્ટેજ ક્રમ અને રન-શીટ</span>
+        </button>
+
+        <button
+          onClick={() => {
+            setAuditLogs(getStoredLogs());
+            setActiveTab('logs');
+          }}
+          className={`px-4 py-2 text-xs sm:text-sm font-bold rounded-xl transition-colors flex items-center gap-2 ${
+            activeTab === 'logs'
+              ? 'bg-amber-600 text-white shadow-xs'
+              : 'text-stone-600 hover:text-stone-900 bg-stone-100'
+          }`}
+        >
+          <History className="w-4 h-4" />
+          <span>ઓડિટ & એક્ટિવિટી લૉગ્સ ({auditLogs.length})</span>
         </button>
       </div>
 
@@ -286,9 +436,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           {filteredEntries.length === 0 ? (
             <div className="bg-white p-12 text-center rounded-3xl border border-stone-200">
               <AlertCircle className="w-8 h-8 text-stone-400 mx-auto mb-2" />
-              <p className="text-sm font-bold text-stone-700">કોઈ એન્ટ્રી મળી નથી.</p>
+              <p className="text-sm font-bold text-stone-700">
+                {entries.length === 0 ? 'હજુ સુધી કોઈ એન્ટ્રી નોંધાયેલ નથી.' : 'આ ફિલ્ટર મુજબ કોઈ એન્ટ્રી મળી નથી.'}
+              </p>
               <p className="text-xs text-stone-500 mt-1">
-                ફિલ્ટર અથવા શોધ શબ્દ બદલીને ફરી તપાસો.
+                {entries.length === 0
+                  ? 'નવા રજીસ્ટ્રેશન ફોર્મ સબમિટ થતાં અહીં આપમેળે જોવા મળશે.'
+                  : 'શોધ શબ્દ અથવા કેટેગરી ફિલ્ટર બદલીને ફરી તપાસો.'}
               </p>
             </div>
           ) : (
@@ -393,7 +547,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           {entry.coordinatorPhone}
                         </a>
                       </div>
-                      <div className="text-stone-500 text-[11px] truncate">{entry.email}</div>
                     </div>
                   </div>
 
@@ -445,7 +598,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         className="px-3 py-1.5 bg-amber-700 hover:bg-amber-800 text-white rounded-lg font-bold text-xs flex items-center gap-1 transition-colors"
                       >
                         <Edit3 className="w-3.5 h-3.5" />
-                        <span>સ્ટેટસ & રિહર્સલ મેનેજ કરો</span>
+                        <span>સ્ટેટસ મેનેજ કરો</span>
+                      </button>
+                      <button
+                        onClick={() => handleDeleteSingleEntry(entry.id, entry.performanceTitle)}
+                        className="p-1.5 text-stone-400 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                        title="આ એન્ટ્રી ડિલીટ કરો"
+                      >
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
@@ -460,7 +620,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       {/* TAB 2: Admin Secure Documents & Uploaded Assets */}
       {activeTab === 'admin_files' && (
         <div className="space-y-6">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <h3 className="text-base sm:text-lg font-bold text-stone-900 font-festive">
                 સાંસ્કૃતિક સમિતિ સુરક્ષિત દસ્તાવેજો (2FA Enforced)
@@ -469,56 +629,86 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 તમામ ફાઇલો ક્લાયન્ટ સાઇડ AES-256 એન્ક્રિપ્શન સાથે સુરક્ષિત છે.
               </p>
             </div>
-            <button
-              onClick={() => setIsUploadDocModalOpen(true)}
-              className="px-4 py-2 bg-amber-700 hover:bg-amber-800 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 shadow-xs"
-            >
-              <Upload className="w-4 h-4" />
-              <span>નવો દસ્તાવેજ અપલોડ કરો</span>
-            </button>
+            <div className="flex items-center gap-2 flex-wrap">
+              {adminFiles.length > 0 && (
+                <button
+                  onClick={handleClearAllAdminFiles}
+                  className="px-3.5 py-2 bg-red-50 hover:bg-red-100 text-red-700 font-bold text-xs rounded-xl flex items-center gap-1.5 transition-colors border border-red-200"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>તમામ ફાઇલો સાફ કરો</span>
+                </button>
+              )}
+              <button
+                onClick={() => setIsUploadDocModalOpen(true)}
+                className="px-4 py-2 bg-amber-700 hover:bg-amber-800 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 shadow-xs"
+              >
+                <Upload className="w-4 h-4" />
+                <span>નવો દસ્તાવેજ અપલોડ કરો</span>
+              </button>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {adminFiles.map((doc) => (
-              <div
-                key={doc.id}
-                className="bg-white p-5 rounded-2xl border border-stone-200 hover:border-amber-400 transition-colors shadow-2xs space-y-3"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-start gap-3">
-                    <div className="p-2.5 rounded-xl bg-amber-100 text-amber-800 shrink-0">
-                      <FileText className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-stone-900 text-sm">{doc.title}</h4>
-                      <div className="text-xs text-stone-500 font-mono mt-0.5">
-                        {doc.file.originalName} ({formatFileSize(doc.file.size)})
+          {adminFiles.length === 0 ? (
+            <div className="bg-white p-12 text-center rounded-3xl border border-stone-200">
+              <FileText className="w-8 h-8 text-stone-300 mx-auto mb-2" />
+              <p className="text-sm font-bold text-stone-700">કોઈ સમિતિ દસ્તાવેજ ઉપલબ્ધ નથી.</p>
+              <p className="text-xs text-stone-400 mt-1">
+                નવા દસ્તાવેજ અપલોડ કરવા "નવો દસ્તાવેજ અપલોડ કરો" બટન દબાવો.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {adminFiles.map((doc) => (
+                <div
+                  key={doc.id}
+                  className="bg-white p-5 rounded-2xl border border-stone-200 hover:border-amber-400 transition-colors shadow-2xs space-y-3"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2.5 rounded-xl bg-amber-100 text-amber-800 shrink-0">
+                        <FileText className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-stone-900 text-sm">{doc.title}</h4>
+                        <div className="text-xs text-stone-500 font-mono mt-0.5">
+                          {doc.file.originalName} ({formatFileSize(doc.file.size)})
+                        </div>
                       </div>
                     </div>
+
+                    {doc.isConfidential && (
+                      <span className="text-[10px] bg-red-100 text-red-800 font-semibold px-2 py-0.5 rounded-md flex items-center gap-1 shrink-0">
+                        <Lock className="w-3 h-3" /> ગુપ્ત
+                      </span>
+                    )}
                   </div>
 
-                  {doc.isConfidential && (
-                    <span className="text-[10px] bg-red-100 text-red-800 font-semibold px-2 py-0.5 rounded-md flex items-center gap-1 shrink-0">
-                      <Lock className="w-3 h-3" /> ગુપ્ત
-                    </span>
+                  {doc.notes && (
+                    <p className="text-xs text-stone-600 bg-stone-50 p-2.5 rounded-xl">
+                      {doc.notes}
+                    </p>
                   )}
-                </div>
 
-                {doc.notes && (
-                  <p className="text-xs text-stone-600 bg-stone-50 p-2.5 rounded-xl">
-                    {doc.notes}
-                  </p>
-                )}
-
-                <div className="pt-2 border-t border-stone-100 text-[11px] text-stone-500 flex items-center justify-between">
-                  <span>અપલોડ કરનાર: {doc.uploadedBy}</span>
-                  <span className="font-mono text-emerald-700 font-semibold">
-                    AES-GCM-256 ✓
-                  </span>
+                  <div className="pt-2 border-t border-stone-100 text-[11px] text-stone-500 flex items-center justify-between">
+                    <span>અપલોડ કરનાર: {doc.uploadedBy}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-emerald-700 font-semibold">
+                        AES-GCM-256 ✓
+                      </span>
+                      <button
+                        onClick={() => handleDeleteAdminFile(doc.id, doc.title)}
+                        className="p-1 text-stone-400 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors"
+                        title="આ દસ્તાવેજ ડિલીટ કરો"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -601,6 +791,132 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </tbody>
             </table>
           </div>
+        </div>
+      )}
+
+      {/* TAB 4: Audit & Activity Logs */}
+      {activeTab === 'logs' && (
+        <div className="bg-white p-6 sm:p-8 rounded-3xl border border-stone-200 shadow-sm space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-200 pb-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <History className="w-5 h-5 text-amber-700" />
+                <h3 className="text-lg sm:text-xl font-bold font-festive text-stone-900">
+                  સિસ્ટમ ઓડિટ & એક્ટિવિટી લૉગ્સ (Audit Logs)
+                </h3>
+              </div>
+              <p className="text-xs text-stone-500 mt-0.5">
+                ફોર્મ સબમિશન, સ્ટેટસ ફેરફાર અને સુરક્ષિત ફાઇલ ક્રિયાઓનો રીયલ-ટાઇમ લૉગ રેકોર્ડ.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              {auditLogs.length > 0 && (
+                <button
+                  onClick={handleClearAllLogs}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>તમામ લૉગ્સ ડિલીટ કરો (Delete All Logs)</span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Search Logs */}
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="relative flex-1 min-w-[240px] max-w-md">
+              <Search className="w-4 h-4 text-stone-400 absolute left-3 top-3" />
+              <input
+                type="text"
+                placeholder="લૉગ વિગત, ક્રિયા અથવા વપરાશકર્તા થી શોધો..."
+                value={logSearchQuery}
+                onChange={(e) => setLogSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-stone-300 focus:ring-2 focus:ring-amber-500 font-medium"
+              />
+            </div>
+            <span className="text-xs text-stone-500 font-mono">
+              કુલ લૉગ્સ: {filteredLogs.length}
+            </span>
+          </div>
+
+          {/* Logs List Table */}
+          {filteredLogs.length === 0 ? (
+            <div className="p-12 text-center border border-dashed border-stone-200 rounded-2xl">
+              <History className="w-8 h-8 text-stone-300 mx-auto mb-2" />
+              <p className="text-sm font-bold text-stone-700">કોઈ લૉગ્સ ઉપલબ્ધ નથી.</p>
+              <p className="text-xs text-stone-400 mt-1">
+                બધા લૉગ્સ ડિલીટ થયેલ છે અથવા શોધ પરિણામ શૂન્ય છે.
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto rounded-2xl border border-stone-200">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-stone-50 text-stone-700 uppercase text-[11px] font-bold border-b border-stone-200">
+                  <tr>
+                    <th className="p-3 w-44">સમય (Timestamp)</th>
+                    <th className="p-3 w-36">ક્રિયા પ્રકાર (Action)</th>
+                    <th className="p-3">વિગત (Details)</th>
+                    <th className="p-3 w-44">કર્તા (Performed By)</th>
+                    <th className="p-3 w-20 text-center">ડિલીટ</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-stone-100">
+                  {filteredLogs.map((log) => (
+                    <tr key={log.id} className="hover:bg-amber-50/40 transition-colors">
+                      <td className="p-3 font-mono text-stone-500 text-[11px] whitespace-nowrap">
+                        {new Date(log.timestamp).toLocaleDateString('gu-IN')} {new Date(log.timestamp).toLocaleTimeString('gu-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                      </td>
+                      <td className="p-3">
+                        <span
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full inline-block ${
+                            log.action === 'entry_created'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : log.action === 'status_updated'
+                              ? 'bg-blue-100 text-blue-800'
+                              : log.action === 'entry_deleted' || log.action === 'file_deleted' || log.action === 'all_entries_cleared'
+                              ? 'bg-red-100 text-red-800'
+                              : log.action === 'file_uploaded'
+                              ? 'bg-amber-100 text-amber-800'
+                              : 'bg-stone-100 text-stone-700'
+                          }`}
+                        >
+                          {log.action === 'entry_created'
+                            ? 'નવી એન્ટ્રી'
+                            : log.action === 'status_updated'
+                            ? 'સ્ટેટસ બદલાયું'
+                            : log.action === 'entry_deleted'
+                            ? 'એન્ટ્રી ડિલીટ'
+                            : log.action === 'file_uploaded'
+                            ? 'ફાઇલ અપલોડ'
+                            : log.action === 'file_deleted'
+                            ? 'ફાઇલ ડિલીટ'
+                            : log.action === 'all_entries_cleared'
+                            ? 'ઓલ ક્લિયર'
+                            : 'સિસ્ટમ'}
+                        </span>
+                      </td>
+                      <td className="p-3 font-medium text-stone-800">
+                        {log.details}
+                      </td>
+                      <td className="p-3 text-stone-600 font-mono text-[11px]">
+                        {log.performedBy}
+                      </td>
+                      <td className="p-3 text-center">
+                        <button
+                          onClick={() => handleDeleteSingleLog(log.id)}
+                          className="p-1.5 text-stone-400 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors inline-flex items-center justify-center"
+                          title="આ લૉગ ડિલીટ કરો"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
 
@@ -783,6 +1099,46 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         onFileSaved={handleAdminFileUploaded}
         lang={lang}
       />
+
+      {/* In-App Confirmation Modal (Replaces blocked window.confirm) */}
+      {confirmDialog && confirmDialog.isOpen && (
+        <div className="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-4 backdrop-blur-xs">
+          <div
+            className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-stone-200 text-center space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-12 h-12 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center mx-auto">
+              <Trash2 className="w-6 h-6" />
+            </div>
+
+            <div>
+              <h4 className="text-base font-bold text-stone-900 font-festive">
+                {confirmDialog.title}
+              </h4>
+              <p className="text-xs text-stone-600 mt-1.5 leading-relaxed">
+                {confirmDialog.message}
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setConfirmDialog(null)}
+                className="flex-1 py-2.5 px-4 rounded-xl border border-stone-300 text-stone-700 hover:bg-stone-100 font-bold text-xs transition-colors"
+              >
+                રદ કરો (Cancel)
+              </button>
+              <button
+                type="button"
+                onClick={confirmDialog.onConfirm}
+                className="flex-1 py-2.5 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-md transition-colors"
+              >
+                {confirmDialog.confirmText}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

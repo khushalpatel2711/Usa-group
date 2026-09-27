@@ -33,12 +33,6 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
   onSubmissionSuccess,
   lang,
 }) => {
-  // Google Account mock state
-  const [googleEmail, setGoogleEmail] = useState('khushalpatel1997@gmail.com');
-  const [isSwitchingAccount, setIsSwitchingAccount] = useState(false);
-  const [customEmailInput, setCustomEmailInput] = useState('');
-  const [recordEmailChecked, setRecordEmailChecked] = useState(true);
-
   // Form inputs
   const [category, setCategory] = useState<ProgramCategory | ''>('');
   const [customCategory, setCustomCategory] = useState('');
@@ -91,21 +85,8 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
     setManualParticipants(updated);
   };
 
-  const handleSwitchAccountSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (customEmailInput.trim() && customEmailInput.includes('@')) {
-      setGoogleEmail(customEmailInput.trim());
-      setIsSwitchingAccount(false);
-      setCustomEmailInput('');
-    }
-  };
-
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
-
-    if (!googleEmail) {
-      newErrors.email = 'માન્ય ઇમેઇલ આવશ્યક છે.';
-    }
 
     if (!category) {
       newErrors.category = 'કૃપા કરીને કાર્યક્રમ પ્રકાર પસંદ કરો.';
@@ -190,7 +171,6 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
       id: `entry_${Date.now()}`,
       entryNumber,
       submittedAt: new Date().toISOString(),
-      email: googleEmail,
       category: category as ProgramCategory,
       customCategory: category === 'other' ? customCategory : undefined,
       performanceTitle: performanceTitle.trim(),
@@ -237,89 +217,16 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
           </p>
         </div>
 
-        {/* Google Account Sign-In Bar (As specified in prompt) */}
-        <div className="p-4 sm:p-5 bg-stone-50 border-b border-stone-200/80 text-xs sm:text-sm text-stone-700">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-stone-900">{googleEmail}</span>
-              <button
-                type="button"
-                onClick={() => setIsSwitchingAccount(!isSwitchingAccount)}
-                className="text-amber-800 hover:text-amber-900 font-semibold underline text-xs"
-              >
-                Switch account
-              </button>
-            </div>
-            <div className="text-red-700 font-semibold text-xs">
-              * Indicates required question
-            </div>
-          </div>
-
-          {/* Account switch form dropdown */}
-          {isSwitchingAccount && (
-            <div className="mt-3 p-3 bg-white rounded-xl border border-amber-300">
-              <div className="flex items-center gap-2">
-                <input
-                  type="email"
-                  placeholder="નવો ઇમેઇલ દાખલ કરો (Enter new email)"
-                  value={customEmailInput}
-                  onChange={(e) => setCustomEmailInput(e.target.value)}
-                  className="flex-1 px-3 py-1.5 text-xs rounded-lg border border-stone-300 focus:outline-hidden focus:ring-2 focus:ring-amber-500"
-                />
-                <button
-                  type="button"
-                  onClick={handleSwitchAccountSubmit}
-                  className="px-3 py-1.5 text-xs font-semibold bg-amber-700 text-white rounded-lg hover:bg-amber-800"
-                >
-                  બદલો
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsSwitchingAccount(false)}
-                  className="px-2 py-1.5 text-xs text-stone-500 hover:text-stone-800"
-                >
-                  રદ
-                </button>
-              </div>
-            </div>
-          )}
-
-          <p className="text-[11px] sm:text-xs text-stone-500 mt-2 leading-relaxed">
-            The name, email, and photo associated with your Google account will be recorded when you upload files and submit this form.
-          </p>
+        {/* Required Fields Notice Bar */}
+        <div className="px-6 py-3.5 bg-stone-50 border-b border-stone-200/80 flex items-center justify-between text-xs text-stone-600">
+          <span className="font-medium text-stone-700">કાર્યક્રમની વિગતો ભરીને નીચે સબમિટ કરો</span>
+          <span className="text-red-700 font-semibold text-xs">* Indicates required question</span>
         </div>
 
         {/* Form Fields Section */}
         <div className="p-5 sm:p-8 space-y-8">
           
-          {/* 1. Email Field */}
-          <div id="field-email" className="space-y-2 border-b border-stone-100 pb-6">
-            <label className="block text-sm sm:text-base font-bold text-stone-900">
-              Email <span className="text-red-600">*</span>
-            </label>
-            <input
-              type="email"
-              value={googleEmail}
-              onChange={(e) => setGoogleEmail(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-stone-300 focus:border-amber-600 focus:ring-2 focus:ring-amber-500/20 text-stone-900 text-sm font-medium"
-              placeholder="તમારો ઇમેઇલ લખો"
-              required
-            />
-            <label className="flex items-center gap-2 pt-1 text-xs text-stone-600 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={recordEmailChecked}
-                onChange={(e) => setRecordEmailChecked(e.target.checked)}
-                className="w-4 h-4 text-amber-700 rounded border-stone-300 focus:ring-amber-500"
-              />
-              <span>
-                Record <strong className="text-stone-900">{googleEmail}</strong> as the email to be included with my response
-              </span>
-            </label>
-            {errors.email && <p className="text-xs text-red-600 font-medium">{errors.email}</p>}
-          </div>
-
-          {/* 2. કાર્યક્રમ (Program Type) */}
+          {/* 1. કાર્યક્રમ (Program Type) */}
           <div id="field-category" className="space-y-3 border-b border-stone-100 pb-6">
             <div>
               <label className="block text-sm sm:text-base font-bold text-stone-900">

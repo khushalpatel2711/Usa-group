@@ -129,20 +129,13 @@ export const NoticeBoard: React.FC<NoticeBoardProps> = ({ lang }) => {
             ))}
           </div>
 
-          {/* Email notice */}
+          {/* Help footer notice */}
           <div className="mt-3 flex items-center justify-between flex-wrap gap-2 text-xs text-stone-600 bg-white/70 px-3 py-2 rounded-xl border border-amber-200">
-            <div className="flex items-center gap-2">
-              <Mail className="w-3.5 h-3.5 text-amber-700" />
-              <span>ઇમેઇલ સપોર્ટ:</span>
-              <a
-                href="mailto:khushalpatel1997@gmail.com"
-                className="font-medium text-amber-900 hover:underline"
-              >
-                khushalpatel1997@gmail.com
-              </a>
-            </div>
-            <span className="text-[11px] text-stone-500">
+            <span className="font-medium text-amber-900">
               શ્રી ઉમિયા સોશિયલ એક્ટિવિટી ગ્રુપ · નંદિની વિભાગ, નાશિક
+            </span>
+            <span className="text-[11px] text-stone-500">
+              કોઈપણ મુશ્કેલી હોય તો ઉપર આપેલા કોઈપણ નંબર પર સીધો સંપર્ક કરવો.
             </span>
           </div>
 

@@ -24,6 +24,12 @@ export default function App() {
     if (session) {
       setAdminUser(session);
     }
+    // Wipe previous demo entries so application has 0 entries
+    const hasCleared = localStorage.getItem('dussehra_2026_demo_cleared');
+    if (!hasCleared) {
+      localStorage.setItem('dussehra_2026_registrations', JSON.stringify([]));
+      localStorage.setItem('dussehra_2026_demo_cleared', 'true');
+    }
     setEntries(getStoredEntries());
   }, []);
 
@@ -154,9 +160,9 @@ export default function App() {
         </div>
 
         <div className="max-w-5xl mx-auto mt-6 pt-6 border-t border-stone-800/80 text-center text-[11px] text-stone-500 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>© 2026 શ્રી ઉમિયા સોશિયલ એક્ટિવિટી ગ્રુપ. સર્વાધિકાર સુરક્ષિત.</span>
-          <span className="flex items-center gap-1">
-            <span>સંપર્ક: khushalpatel1997@gmail.com</span>
+          <span>© 2026 શ્રી ઉમિયા સોશિયલ એક્ટિવિટી ગ્રુપ - નંદિની વિભાગ, નાશિક. સર્વાધિકાર સુરક્ષિત.</span>
+          <span className="flex items-center gap-1 text-stone-400">
+            <span>સંપર્ક હેલ્પલાઈન: 8888858257 · 9021223266</span>
           </span>
         </div>
       </footer>
