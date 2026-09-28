@@ -34,7 +34,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({ lang }) => {
       <div className="max-w-4xl mx-auto text-center relative z-10">
         
         {/* Divine Invocation & Group Title */}
-        <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-300 text-xs sm:text-sm font-semibold mb-4 tracking-wide">
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-300 text-xs sm:text-sm font-semibold mb-4 tracking-wide shadow-xs">
           <span>॥ શ્રી ઉમિયા માતાજી જયતે ॥</span>
           <span>·</span>
           <span>દશેરા પર્વ ૨૦૨૬</span>
@@ -49,30 +49,30 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({ lang }) => {
         </p>
 
         {/* Main Event Title */}
-        <div className="py-2 px-6 sm:px-10 rounded-2xl bg-gradient-to-r from-amber-800/60 via-red-900/70 to-amber-800/60 border border-amber-500/40 backdrop-blur-xs max-w-3xl mx-auto shadow-inner mb-6">
+        <div className="py-3 px-6 sm:px-10 rounded-2xl bg-gradient-to-r from-amber-800/70 via-red-900/80 to-amber-800/70 border border-amber-400/50 backdrop-blur-xs max-w-3xl mx-auto shadow-inner mb-6">
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white font-festive leading-tight">
             દશેરા સાંસ્કૃતિક કાર્યક્રમ - 2026
           </h1>
-          <p className="text-amber-300 text-sm sm:text-base font-semibold mt-1">
+          <p className="text-amber-300 text-xs sm:text-sm md:text-base font-semibold mt-1">
             આયોજિત દશેરા સાંસ્કૃતિક કાર્યક્રમ વર્ષ ૨૦૨૬ નો સત્તાવાર રજીસ્ટ્રેશન ફોર્મ
           </p>
         </div>
 
         {/* Event Quick Trust & Event Info Badges */}
         <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 text-xs sm:text-sm text-stone-300">
-          <div className="flex items-center gap-1.5 bg-stone-900/60 px-3 py-1.5 rounded-lg border border-amber-500/20">
+          <div className="flex items-center gap-1.5 bg-stone-900/70 px-3 py-1.5 rounded-xl border border-amber-500/30 shadow-2xs">
             <Calendar className="w-4 h-4 text-amber-400 shrink-0" />
             <span>દશેરા મહોત્સવ ઓક્ટોબર ૨૦૨૬</span>
           </div>
 
-          <div className="flex items-center gap-1.5 bg-stone-900/60 px-3 py-1.5 rounded-lg border border-amber-500/20">
+          <div className="flex items-center gap-1.5 bg-stone-900/70 px-3 py-1.5 rounded-xl border border-amber-500/30 shadow-2xs">
             <MapPin className="w-4 h-4 text-amber-400 shrink-0" />
             <span>નંદિની વિભાગ, નાશિક</span>
           </div>
 
-          <div className="flex items-center gap-1.5 bg-stone-900/60 px-3 py-1.5 rounded-lg border border-amber-500/20">
+          <div className="flex items-center gap-1.5 bg-stone-900/70 px-3 py-1.5 rounded-xl border border-amber-500/30 shadow-2xs">
             <Lock className="w-4 h-4 text-amber-400 shrink-0" />
-            <span>256-Bit AES એન્ક્રિપ્ટેડ & 2FA સુરક્ષિત</span>
+            <span>256-Bit AES એન્ક્રિપ્ટેડ</span>
           </div>
         </div>
 
