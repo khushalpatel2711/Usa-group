@@ -43,14 +43,12 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
   const [durationSeconds, setDurationSeconds] = useState<number | ''>(0);
 
   // Files
-  const [participantsPhoto, setParticipantsPhoto] = useState<UploadedFileMeta | undefined>(undefined);
   const [songFile, setSongFile] = useState<UploadedFileMeta | undefined>(undefined);
 
-  // Optional direct participant table
+  // Direct participant list table
   const [manualParticipants, setManualParticipants] = useState<Participant[]>([
     { name: '', age: '' },
   ]);
-  const [showManualParticipantTable, setShowManualParticipantTable] = useState(false);
 
   // Coordinator
   const [coordinatorName, setCoordinatorName] = useState('');
@@ -115,6 +113,11 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
     const updated = [...manualParticipants];
     updated[index][field] = value;
     setManualParticipants(updated);
+    if (errors.participants && updated.some((p) => p.name.trim() !== '')) {
+      const updatedErrors = { ...errors };
+      delete updatedErrors.participants;
+      setErrors(updatedErrors);
+    }
   };
 
   const validate = (): boolean => {
@@ -138,9 +141,12 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
       newErrors.duration = 'કાર્યક્રમ નો સમય (મિનિટ/સેકન્ડ) લખવો જરૂરી છે.';
     }
 
-    if (!participantsPhoto) {
-      newErrors.participantsPhoto =
-        'સ્પર્ધકોના નામ અને ઉંમર કાગળ પર લખી તેનો ફોટો અપલોડ કરવો ફરજિયાત છે.';
+    const validParticipantsList = manualParticipants.filter(
+      (p) => p.name.trim() !== ''
+    );
+    if (validParticipantsList.length === 0) {
+      newErrors.participants =
+        'કાર્યક્રમ માં ભાગ લેનાર ઓછામાં ઓછા ૧ સભ્યનું પૂરું નામ ટેબલમાં લખવું ફરજિયાત છે.';
     }
 
     if (!coordinatorName.trim()) {
@@ -221,8 +227,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
       durationMinutes: mins,
       durationSeconds: secs,
       formattedDuration,
-      participantsPhotoFile: participantsPhoto,
-      manualParticipants: validManualParticipants.length > 0 ? validManualParticipants : undefined,
+      manualParticipants: validManualParticipants,
       coordinatorName: coordinatorName.trim(),
       coordinatorPhone: coordinatorPhone.trim(),
       preIntroRequired: preIntroRequired === 'YES',
@@ -452,97 +457,122 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             )}
           </div>
 
-          {/* 5. કાર્યક્રમ માં ભાગ લેનારના નામ (Photo upload & Table) */}
-          <div id="field-participantsPhoto" className="space-y-4 border-b border-stone-100 pb-6">
-            <FileUploadWithProgress
-              id="participants-photo-upload"
-              label="કાર્યક્રમ માં ભાગ લેનારના નામ"
-              subLabel="WRITE NAME AND AGE IN PAGE AND TAKE PHOTO AND UPLOAD HERE (Upload 1 supported file: image. Max 10 MB.)"
-              acceptTypes="image/*,.jpg,.jpeg,.png,.webp,.heic"
-              maxSizeBytes={10 * 1024 * 1024} // 10MB
-              maxSizeLabel="10 MB"
-              fileKind="image"
-              currentFile={participantsPhoto}
-              onFileUploaded={(meta) => {
-                setParticipantsPhoto(meta);
-                if (errors.participantsPhoto) {
-                  const updated = { ...errors };
-                  delete updated.participantsPhoto;
-                  setErrors(updated);
-                }
-              }}
-              onFileRemoved={() => setParticipantsPhoto(undefined)}
-              isRequired
-            />
+          {/* 5. કાર્યક્રમ માં ભાગ લેનારના નામ (Participant Names Table) */}
+          <div id="field-participants" className="space-y-4 border-b border-stone-100 pb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <div>
+                <label className="block text-sm sm:text-base font-bold text-stone-900 flex items-center gap-2">
+                  <span>કાર્યક્રમ માં ભાગ લેનારના નામ</span>
+                  <span className="text-red-600">*</span>
+                  <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300">
+                    {manualParticipants.filter((p) => p.name.trim() !== '').length} સભ્યો નોંધાયા
+                  </span>
+                </label>
+                <p className="text-xs sm:text-sm text-stone-600 mt-0.5 font-medium">
+                  ભાગ લેનાર દરેક સભ્યનું પૂરું નામ અને ઉંમર નીચેના ટેબલમાં ઉમેરો.
+                </p>
+              </div>
 
-            {errors.participantsPhoto && (
-              <p className="text-xs text-red-600 font-medium">{errors.participantsPhoto}</p>
-            )}
-
-            {/* Optional Direct Participant List Table */}
-            <div className="pt-2">
               <button
                 type="button"
-                onClick={() => setShowManualParticipantTable(!showManualParticipantTable)}
-                className="text-xs font-semibold text-amber-800 hover:text-amber-900 flex items-center gap-1.5 underline"
+                onClick={handleAddParticipantRow}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-amber-950 bg-amber-100 hover:bg-amber-200 border border-amber-300 rounded-xl transition-all self-start sm:self-auto shadow-2xs active:scale-95"
               >
-                <span>
-                  {showManualParticipantTable
-                    ? '▼ સ્પર્ધકોનું ટેબલ છુપાવો (Hide manual table)'
-                    : '► વૈકલ્પિક: સ્પર્ધકોના નામ અને ઉંમર અહીં સીધા ટાઈપ પણ કરી શકો છો (Add names in table)'}
-                </span>
+                <Plus className="w-4 h-4 text-amber-800" />
+                <span>+ વધુ સભ્ય ઉમેરો (Add Member)</span>
               </button>
-
-              {showManualParticipantTable && (
-                <div className="mt-3 p-4 bg-stone-50 rounded-2xl border border-stone-200 space-y-3">
-                  <div className="text-xs text-stone-600 font-medium">
-                    ભાગ લેનાર દરેક સભ્યનું પૂરું નામ અને ઉંમર:
-                  </div>
-
-                  <div className="space-y-2">
-                    {manualParticipants.map((p, idx) => (
-                      <div key={idx} className="flex items-center gap-2">
-                        <span className="w-6 text-center text-xs font-bold text-stone-500 font-mono">
-                          {idx + 1}.
-                        </span>
-                        <input
-                          type="text"
-                          placeholder="સભ્યનું નામ (Full Name)"
-                          value={p.name}
-                          onChange={(e) => handleParticipantChange(idx, 'name', e.target.value)}
-                          className="flex-1 px-3 py-1.5 text-xs rounded-xl border border-stone-300 bg-white focus:ring-1 focus:ring-amber-500"
-                        />
-                        <input
-                          type="text"
-                          placeholder="ઉંમર (Age)"
-                          value={p.age}
-                          onChange={(e) => handleParticipantChange(idx, 'age', e.target.value)}
-                          className="w-20 px-3 py-1.5 text-xs text-center rounded-xl border border-stone-300 bg-white focus:ring-1 focus:ring-amber-500"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveParticipantRow(idx)}
-                          disabled={manualParticipants.length === 1}
-                          className="p-1.5 text-stone-400 hover:text-red-700 disabled:opacity-30 rounded"
-                          title="કાઢી નાખો"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={handleAddParticipantRow}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-amber-800 bg-amber-100 hover:bg-amber-200 rounded-lg transition-colors"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>વધુ સભ્ય ઉમેરો (Add Row)</span>
-                  </button>
-                </div>
-              )}
             </div>
+
+            <div className="bg-stone-50/90 rounded-2xl border border-stone-200 p-3 sm:p-4 space-y-3">
+              {/* Table Column Headers */}
+              <div className="hidden sm:grid grid-cols-12 gap-3 text-xs font-bold text-stone-600 px-2 pb-1 border-b border-stone-200/80">
+                <div className="col-span-1 text-center font-mono">ક્રમ</div>
+                <div className="col-span-7">સભ્યનું પૂરું નામ (Full Name) <span className="text-red-600">*</span></div>
+                <div className="col-span-3 text-center">ઉંમર (Age)</div>
+                <div className="col-span-1 text-center">હટાવો</div>
+              </div>
+
+              {/* Rows */}
+              <div className="space-y-2.5">
+                {manualParticipants.map((p, idx) => (
+                  <div
+                    key={idx}
+                    className="flex flex-col sm:grid sm:grid-cols-12 gap-2 sm:gap-3 items-stretch sm:items-center bg-white p-2.5 sm:p-2 rounded-xl border border-stone-200 shadow-2xs hover:border-amber-300 transition-colors"
+                  >
+                    {/* Index Badge */}
+                    <div className="col-span-1 flex items-center gap-2 sm:justify-center">
+                      <span className="w-6 h-6 rounded-full bg-amber-100 text-amber-900 font-bold font-mono text-xs flex items-center justify-center shrink-0 border border-amber-200">
+                        {idx + 1}
+                      </span>
+                      <span className="sm:hidden text-xs font-bold text-stone-700">
+                        સભ્ય #{idx + 1}
+                      </span>
+                    </div>
+
+                    {/* Name Input */}
+                    <div className="col-span-7">
+                      <input
+                        type="text"
+                        placeholder="દા.ત. રિયા પટેલ / આયુષ શાહ"
+                        value={p.name}
+                        onChange={(e) => handleParticipantChange(idx, 'name', e.target.value)}
+                        className="w-full px-3 py-2 text-xs sm:text-sm rounded-lg border border-stone-300 focus:border-amber-600 focus:ring-2 focus:ring-amber-500/20 font-medium text-stone-900"
+                        required={idx === 0}
+                      />
+                    </div>
+
+                    {/* Age Input */}
+                    <div className="col-span-3 flex items-center gap-1.5">
+                      <span className="sm:hidden text-xs text-stone-500 font-medium">ઉંમર:</span>
+                      <input
+                        type="text"
+                        maxLength={3}
+                        placeholder="ઉંમર (Age)"
+                        value={p.age}
+                        onChange={(e) => handleParticipantChange(idx, 'age', e.target.value.replace(/\D/g, ''))}
+                        className="w-full px-3 py-2 text-xs sm:text-sm text-center rounded-lg border border-stone-300 focus:border-amber-600 focus:ring-2 focus:ring-amber-500/20 font-mono font-medium text-stone-900"
+                      />
+                    </div>
+
+                    {/* Remove Action */}
+                    <div className="col-span-1 flex justify-end sm:justify-center">
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveParticipantRow(idx)}
+                        disabled={manualParticipants.length === 1}
+                        className="p-1.5 text-stone-400 hover:text-red-700 hover:bg-red-50 disabled:opacity-20 rounded-lg transition-colors"
+                        title="સભ્ય કાઢી નાખો"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Add Member Button + Info bar */}
+              <div className="pt-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-t border-stone-200/80">
+                <button
+                  type="button"
+                  onClick={handleAddParticipantRow}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-amber-900 bg-amber-100 hover:bg-amber-200 rounded-lg transition-colors border border-amber-300/80 shadow-2xs"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>વધુ સભ્ય ઉમેરો (Add Member Row)</span>
+                </button>
+
+                <p className="text-[11px] text-stone-500">
+                  નિયમ: એક વ્યક્તિ સમગ્ર મહોત્સવમાં માત્ર ૧ જ કાર્યક્રમમાં ભાગ લઈ શકશે.
+                </p>
+              </div>
+            </div>
+
+            {errors.participants && (
+              <p className="text-xs text-red-600 font-medium flex items-center gap-1">
+                <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                <span>{errors.participants}</span>
+              </p>
+            )}
           </div>
 
           {/* 6. કાર્યક્રમ તૈયાર કરાવનાર નું નામ તથા નંબર */}

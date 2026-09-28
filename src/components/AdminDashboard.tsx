@@ -24,6 +24,7 @@ import {
   Lock,
   Trash2,
   History,
+  Users,
 } from 'lucide-react';
 import {
   RegistrationEntry,
@@ -36,6 +37,9 @@ import {
 import {
   updateEntryStatus,
   exportEntriesToCSV,
+  downloadEntryParticipants,
+  getParticipantDownloadFileName,
+  exportAllParticipantsToCSV,
   getStoredAdminFiles,
   clearAllEntries,
   deleteEntry,
@@ -272,6 +276,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             >
               <Download className="w-4 h-4" />
               <span>Excel / CSV ડાઉનલોડ</span>
+            </button>
+
+            <button
+              onClick={() => exportAllParticipantsToCSV(entries)}
+              disabled={entries.length === 0}
+              className="px-4 py-2 text-xs font-bold text-amber-950 bg-amber-200 hover:bg-amber-300 disabled:opacity-40 rounded-xl shadow-xs transition-colors flex items-center gap-1.5"
+              title="તમામ એન્ટ્રીઓના ભાગ લેનાર સ્પર્ધકોની યાદી CSV ડાઉનલોડ કરો"
+            >
+              <Users className="w-4 h-4 text-amber-900" />
+              <span>તમામ સ્પર્ધકોની યાદી ડાઉનલોડ</span>
             </button>
 
             <button
@@ -537,16 +551,61 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           "{entry.preIntroDetails}"
                         </p>
                       )}
+
+                      {/* Participant Names List */}
+                      {entry.manualParticipants && entry.manualParticipants.length > 0 && (
+                        <div className="mt-2.5 p-2.5 bg-amber-50/70 border border-amber-200/90 rounded-xl text-xs space-y-1.5">
+                          <div className="flex items-center justify-between font-bold text-amber-950 flex-wrap gap-2">
+                            <span className="flex items-center gap-1.5">
+                              <Users className="w-3.5 h-3.5 text-amber-800" />
+                              <span>ભાગ લેનાર સભ્યો ({entry.manualParticipants.length}):</span>
+                            </span>
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                onClick={() => downloadEntryParticipants(entry)}
+                                className="px-2.5 py-1 bg-amber-200 hover:bg-amber-300 text-amber-950 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-colors border border-amber-300 shadow-2xs"
+                                title={`ફાઇલ નામ: "${getParticipantDownloadFileName(entry)}"`}
+                              >
+                                <Download className="w-3 h-3 text-amber-900" />
+                                <span>નામ ડાઉનલોડ (CSV)</span>
+                              </button>
+                            </div>
+                          </div>
+                          <div className="text-[11px] text-stone-500 font-mono flex items-center gap-1">
+                            <span className="text-stone-400">ફાઇલ:</span>
+                            <span className="font-semibold text-amber-900 truncate">
+                              {getParticipantDownloadFileName(entry)}
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {entry.manualParticipants.map((p, idx) => (
+                              <span
+                                key={idx}
+                                className="inline-flex items-center gap-1 bg-white px-2 py-0.5 rounded-md border border-stone-200 text-[11px] text-stone-800 font-medium"
+                              >
+                                <span className="font-mono text-stone-400 font-bold">{idx + 1}.</span>
+                                <span>{p.name}</span>
+                                {p.age && (
+                                  <span className="text-stone-500 font-mono text-[10px]">({p.age} વર્ષ)</span>
+                                )}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
 
-                    <div className="bg-stone-50 p-3 rounded-xl border border-stone-200 text-xs space-y-1">
+                    <div className="bg-stone-50 p-3 rounded-xl border border-stone-200 text-xs space-y-1.5">
+                      <div className="text-[10px] font-bold uppercase text-amber-900/80 tracking-wide">
+                        કાર્યક્રમ તૈયાર કરાવનાર:
+                      </div>
                       <div className="font-semibold text-stone-800 flex items-center gap-1.5">
-                        <User className="w-3.5 h-3.5 text-stone-500" />
-                        <span>{entry.coordinatorName}</span>
+                        <User className="w-3.5 h-3.5 text-stone-500 shrink-0" />
+                        <span className="truncate">{entry.coordinatorName}</span>
                       </div>
                       <div className="text-stone-600 flex items-center gap-1.5 font-mono">
-                        <Phone className="w-3.5 h-3.5 text-stone-500" />
-                        <a href={`tel:${entry.coordinatorPhone}`} className="hover:underline">
+                        <Phone className="w-3.5 h-3.5 text-stone-500 shrink-0" />
+                        <a href={`tel:${entry.coordinatorPhone}`} className="hover:underline font-semibold text-stone-700">
                           {entry.coordinatorPhone}
                         </a>
                       </div>
@@ -572,6 +631,41 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         <Music className="w-3.5 h-3.5 text-amber-700" />
                         <span>ગીત સાંભળો ({formatFileSize(entry.songFile.size)})</span>
                       </button>
+
+                      {/* Participant Names CSV download button with Dance / Group Name */}
+                      {entry.manualParticipants && entry.manualParticipants.length > 0 && (
+                        <div className="inline-flex items-center rounded-lg border border-amber-300 bg-amber-100 shadow-2xs">
+                          <button
+                            onClick={() => downloadEntryParticipants(entry)}
+                            className="px-2.5 py-1.5 hover:bg-amber-200 text-amber-950 font-bold flex items-center gap-1.5 transition-colors text-xs rounded-l-lg"
+                            title={`સ્પર્ધકોની યાદી ડાઉનલોડ કરો (ફાઇલ: "${getParticipantDownloadFileName(entry)}")`}
+                          >
+                            <Download className="w-3.5 h-3.5 text-amber-900" />
+                            <span>
+                              સ્પર્ધકોના નામ ડાઉનલોડ ({entry.performanceTitle || entry.coordinatorName})
+                            </span>
+                          </button>
+                          {entry.performanceTitle && entry.coordinatorName && (
+                            <div className="flex items-center border-l border-amber-300/80 px-1.5 py-1 gap-1 bg-amber-50 rounded-r-lg text-[10px]">
+                              <button
+                                onClick={() => downloadEntryParticipants(entry, 'dance')}
+                                className="px-1.5 py-0.5 font-semibold text-amber-900 hover:bg-amber-200 rounded transition-colors"
+                                title={`ડાન્સ નામથી ડાઉનલોડ: "${entry.performanceTitle.trim()}.csv"`}
+                              >
+                                ડાન્સ નામ
+                              </button>
+                              <span className="text-amber-300">|</span>
+                              <button
+                                onClick={() => downloadEntryParticipants(entry, 'group')}
+                                className="px-1.5 py-0.5 font-semibold text-amber-900 hover:bg-amber-200 rounded transition-colors"
+                                title={`ગ્રૂપ નામથી ડાઉનલોડ: "${entry.coordinatorName.trim()}.csv"`}
+                              >
+                                ગ્રૂપ નામ
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
 
                       {/* Participant sheet button & download */}
                       {entry.participantsPhotoFile && (

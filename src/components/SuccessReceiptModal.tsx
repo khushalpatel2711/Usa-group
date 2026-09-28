@@ -10,6 +10,7 @@ import {
   Music,
   Share2,
   FileCheck,
+  Users,
 } from 'lucide-react';
 import { RegistrationEntry } from '../types';
 import { formatFileSize } from '../utils/crypto';
@@ -121,6 +122,38 @@ export const SuccessReceiptModal: React.FC<SuccessReceiptModalProps> = ({
               <span className="font-bold font-mono text-stone-900">{entry.coordinatorPhone}</span>
             </div>
           </div>
+
+          {/* Registered Participants Table */}
+          {entry.manualParticipants && entry.manualParticipants.length > 0 && (
+            <div className="p-3.5 bg-amber-50/70 border border-amber-300 rounded-2xl space-y-2 text-xs">
+              <div className="flex items-center justify-between font-bold text-amber-950">
+                <span className="flex items-center gap-1.5">
+                  <Users className="w-4 h-4 text-amber-800" />
+                  <span>ભાગ લેનાર સભ્યોની યાદી (Participants List):</span>
+                </span>
+                <span className="text-[11px] bg-amber-200/80 px-2.5 py-0.5 rounded-full font-mono font-bold text-amber-950">
+                  {entry.manualParticipants.length} સભ્યો
+                </span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pt-1">
+                {entry.manualParticipants.map((p, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between bg-white px-2.5 py-1.5 rounded-lg border border-amber-200 text-stone-800"
+                  >
+                    <span className="font-semibold truncate">
+                      {i + 1}. {p.name}
+                    </span>
+                    {p.age && (
+                      <span className="text-[11px] text-stone-500 font-mono shrink-0 ml-2">
+                        {p.age} વર્ષ
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Encrypted Files Status Card */}
           <div className="p-3.5 bg-stone-100 rounded-2xl border border-stone-200 space-y-2 text-xs">

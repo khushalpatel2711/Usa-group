@@ -348,47 +348,259 @@ export function setAdminSession(user: AdminUser | null): void {
 
 export function exportEntriesToCSV(entries: RegistrationEntry[]): void {
   const headers = [
-    'Entry No',
-    'Date',
-    'Category',
-    'Performance Title',
-    'Duration',
-    'Coordinator Name',
-    'Phone Number',
-    'Pre-Intro Required',
-    'LED Video Required',
-    'Status',
-    'Rehearsal Date',
-    'Admin Notes',
+    'ટોકન નંબર',
+    'તારીખ',
+    'કેટેગરી',
+    'કાર્યક્રમ / ડાન્સનું નામ',
+    'કાર્યક્રમ નો સમય',
+    'સ્પર્ધકોની સંખ્યા',
+    'સ્પર્ધકોની યાદી',
+    'કાર્યક્રમ તૈયાર કરાવનાર નું નામ',
+    'કાર્યક્રમ તૈયાર કરાવનાર નો નંબર',
+    'પ્રિ-ઇન્ટ્રો પ્રસ્તાવના',
+    'LED સ્ક્રીન વિડિયો',
+    'સ્ટેટસ',
+    'રિહર્સલ તારીખ',
+    'સમિતિ શેરો / નોંધ',
   ];
 
-  const rows = entries.map(e => [
-    e.entryNumber,
-    new Date(e.submittedAt).toLocaleDateString('en-IN'),
-    e.category === 'raas_garba'
-      ? 'રાસ ગરબા'
-      : e.category === 'dance'
-      ? 'ડાન્સ'
-      : e.category === 'natak'
-      ? 'નાટક'
-      : `અન્ય (${e.customCategory || ''})`,
-    `"${(e.performanceTitle || '').replace(/"/g, '""')}"`,
-    e.formattedDuration,
-    `"${(e.coordinatorName || '').replace(/"/g, '""')}"`,
-    e.coordinatorPhone,
-    e.preIntroRequired ? 'YES' : 'NO',
-    e.ledScreenRequired ? 'YES' : 'NO',
-    e.status,
-    e.rehearsalDate || '',
-    `"${(e.adminNotes || '').replace(/"/g, '""')}"`,
-  ]);
+  const rows = entries.map(e => {
+    const participantsList =
+      e.manualParticipants && e.manualParticipants.length > 0
+        ? e.manualParticipants
+            .map((p, i) => `${i + 1}. ${p.name}${p.age ? ` (${p.age} વર્ષ)` : ''}`)
+            .join('; ')
+        : '-';
+    const participantsCount = e.manualParticipants?.length || 0;
+
+    const statusLabel =
+      e.status === 'confirmed'
+        ? 'મંજૂર'
+        : e.status === 'rejected'
+        ? 'નામંજૂર'
+        : e.status === 'rehearsal_scheduled'
+        ? 'રિહર્સલ નક્કી થયેલ'
+        : e.status === 'script_approved'
+        ? 'સ્ક્રિપ્ટ મંજૂર'
+        : 'પ્રતીક્ષામાં';
+
+    return [
+      e.entryNumber,
+      new Date(e.submittedAt).toLocaleDateString('gu-IN'),
+      e.category === 'raas_garba'
+        ? 'રાસ ગરબા'
+        : e.category === 'dance'
+        ? 'ડાન્સ'
+        : e.category === 'natak'
+        ? 'નાટક'
+        : `અન્ય ${e.customCategory ? `(${e.customCategory})` : ''}`,
+      `"${(e.performanceTitle || '').replace(/"/g, '""')}"`,
+      `"${e.formattedDuration || ''}"`,
+      participantsCount,
+      `"${participantsList.replace(/"/g, '""')}"`,
+      `"${(e.coordinatorName || '').replace(/"/g, '""')}"`,
+      `"${(e.coordinatorPhone || '').replace(/"/g, '""')}"`,
+      e.preIntroRequired ? 'હા' : 'ના',
+      e.ledScreenRequired ? 'હા' : 'ના',
+      statusLabel,
+      e.rehearsalDate || '',
+      `"${(e.adminNotes || '').replace(/"/g, '""')}"`,
+    ];
+  });
 
   const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
   const encodedUri = encodeURI(csvContent);
   const link = document.createElement('a');
   link.setAttribute('href', encodedUri);
-  link.setAttribute('download', `Dussehra_2026_Entries_${new Date().toISOString().slice(0, 10)}.csv`);
+  link.setAttribute('download', `દશેરા_2026_એન્ટ્રીઓ_${new Date().toISOString().slice(0, 10)}.csv`);
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
 }
+
+/**
+ * Computes the file name for downloading participants list based on Dance name or Group name in Gujarati.
+ */
+export function getParticipantDownloadFileName(
+  entry: RegistrationEntry,
+  namingMode?: 'dance' | 'group' | 'both'
+): string {
+  const danceName = (entry.performanceTitle || '').trim();
+  const groupName = (entry.coordinatorName || '').trim();
+
+  let target = '';
+  if (namingMode === 'dance') {
+    target = danceName || groupName;
+  } else if (namingMode === 'group') {
+    target = groupName || danceName;
+  } else {
+    // If both dance name and group name are present and distinct, format as "Dance - Group"
+    if (danceName && groupName && danceName.toLowerCase() !== groupName.toLowerCase()) {
+      target = `${danceName} - ${groupName}`;
+    } else {
+      target = danceName || groupName || 'સ્પર્ધકોની_યાદી';
+    }
+  }
+
+  // Remove filesystem forbidden characters: \ / : * ? " < > |
+  const safe = target
+    .replace(/[/\\?%*:|"<>]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  return `${safe || 'સ્પર્ધકોની_યાદી'}.csv`;
+}
+
+/**
+ * Downloads participant names for a specific entry as a CSV file in pure Gujarati.
+ * The file name is set to the Dance name or Group name.
+ */
+export function downloadEntryParticipants(
+  entry: RegistrationEntry,
+  namingMode?: 'dance' | 'group' | 'both'
+): void {
+  const participants = entry.manualParticipants || [];
+  if (participants.length === 0) {
+    alert('આ એન્ટ્રીમાં કોઈ સ્પર્ધકોના નામ મળ્યા નથી.');
+    return;
+  }
+
+  const headers = [
+    'ક્રમ',
+    'સ્પર્ધકનું પૂરું નામ',
+    'ઉંમર',
+    'કાર્યક્રમ / ડાન્સનું નામ',
+    'કાર્યક્રમ નો સમય',
+    'કેટેગરી',
+    'ટોકન નંબર',
+    'કાર્યક્રમ તૈયાર કરાવનાર નું નામ',
+    'કાર્યક્રમ તૈયાર કરાવનાર નો નંબર',
+  ];
+
+  const categoryLabel =
+    entry.category === 'raas_garba'
+      ? 'રાસ ગરબા'
+      : entry.category === 'dance'
+      ? 'ડાન્સ'
+      : entry.category === 'natak'
+      ? 'નાટક'
+      : `અન્ય ${entry.customCategory ? `(${entry.customCategory})` : ''}`;
+
+  const rows = participants.map((p, idx) => [
+    idx + 1,
+    `"${(p.name || '').replace(/"/g, '""')}"`,
+    p.age ? `"${p.age}"` : '""',
+    `"${(entry.performanceTitle || '').replace(/"/g, '""')}"`,
+    `"${entry.formattedDuration || ''}"`,
+    `"${categoryLabel}"`,
+    `"${entry.entryNumber}"`,
+    `"${(entry.coordinatorName || '').replace(/"/g, '""')}"`,
+    `"${(entry.coordinatorPhone || '').replace(/"/g, '""')}"`,
+  ]);
+
+  const csvContent =
+    'data:text/csv;charset=utf-8,\uFEFF' +
+    [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement('a');
+  link.setAttribute('href', encodedUri);
+
+  const downloadFileName = getParticipantDownloadFileName(entry, namingMode);
+  link.setAttribute('download', downloadFileName);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+/**
+ * Downloads all participants across all registrations in a consolidated master CSV in pure Gujarati.
+ */
+export function exportAllParticipantsToCSV(entries: RegistrationEntry[]): void {
+  const allRows: string[][] = [];
+  let globalIndex = 1;
+
+  entries.forEach((entry) => {
+    const categoryLabel =
+      entry.category === 'raas_garba'
+        ? 'રાસ ગરબા'
+        : entry.category === 'dance'
+        ? 'ડાન્સ'
+        : entry.category === 'natak'
+        ? 'નાટક'
+        : `અન્ય ${entry.customCategory ? `(${entry.customCategory})` : ''}`;
+
+    const statusLabel =
+      entry.status === 'confirmed'
+        ? 'મંજૂર'
+        : entry.status === 'rejected'
+        ? 'નામંજૂર'
+        : entry.status === 'rehearsal_scheduled'
+        ? 'રિહર્સલ નક્કી થયેલ'
+        : entry.status === 'script_approved'
+        ? 'સ્ક્રિપ્ટ મંજૂર'
+        : 'પ્રતીક્ષામાં';
+
+    const participants = entry.manualParticipants || [];
+    if (participants.length > 0) {
+      participants.forEach((p, idx) => {
+        allRows.push([
+          String(globalIndex++),
+          entry.entryNumber,
+          `"${(p.name || '').replace(/"/g, '""')}"`,
+          p.age ? `"${p.age}"` : '""',
+          String(idx + 1),
+          `"${(entry.performanceTitle || '').replace(/"/g, '""')}"`,
+          `"${entry.formattedDuration || ''}"`,
+          `"${categoryLabel}"`,
+          `"${(entry.coordinatorName || '').replace(/"/g, '""')}"`,
+          `"${(entry.coordinatorPhone || '').replace(/"/g, '""')}"`,
+          statusLabel,
+        ]);
+      });
+    } else {
+      // Entry with no participant rows listed
+      allRows.push([
+        String(globalIndex++),
+        entry.entryNumber,
+        '"- (કોઈ સભ્ય યાદી નથી) -"',
+        '""',
+        '1',
+        `"${(entry.performanceTitle || '').replace(/"/g, '""')}"`,
+        `"${entry.formattedDuration || ''}"`,
+        `"${categoryLabel}"`,
+        `"${(entry.coordinatorName || '').replace(/"/g, '""')}"`,
+        `"${(entry.coordinatorPhone || '').replace(/"/g, '""')}"`,
+        statusLabel,
+      ]);
+    }
+  });
+
+  const headers = [
+    'કુલ ક્રમ',
+    'ટોકન નંબર',
+    'સ્પર્ધકનું પૂરું નામ',
+    'ઉંમર',
+    'ગ્રૂપ ક્રમ',
+    'કાર્યક્રમ / ડાન્સનું નામ',
+    'કાર્યક્રમ નો સમય',
+    'કેટેગરી',
+    'કાર્યક્રમ તૈયાર કરાવનાર નું નામ',
+    'કાર્યક્રમ તૈયાર કરાવનાર નો નંબર',
+    'સ્ટેટસ',
+  ];
+
+  const csvContent =
+    'data:text/csv;charset=utf-8,\uFEFF' +
+    [headers.join(','), ...allRows.map((r) => r.join(','))].join('\n');
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement('a');
+  link.setAttribute('href', encodedUri);
+  link.setAttribute(
+    'download',
+    `દશેરા_2026_તમામ_સ્પર્ધકોની_યાદી_${new Date().toISOString().slice(0, 10)}.csv`
+  );
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
