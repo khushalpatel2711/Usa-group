@@ -121,6 +121,20 @@ export const SuccessReceiptModal: React.FC<SuccessReceiptModalProps> = ({
               <span className="text-stone-500 block text-[11px]">મોબાઈલ નંબર (Phone):</span>
               <span className="font-bold font-mono text-stone-900">{entry.coordinatorPhone}</span>
             </div>
+
+            <div className="p-3 bg-stone-50 rounded-xl border border-stone-200 sm:col-span-2">
+              <span className="text-stone-500 block text-[11px]">
+                કાર્યક્રમ શરૂ થાય તે પહેલાં માહિતી (Pre-Intro):
+              </span>
+              <span className="font-bold text-stone-900">
+                {entry.preIntroRequired ? 'હા (YES)' : 'ના (NO)'}
+              </span>
+              {entry.preIntroRequired && entry.preIntroDetails && (
+                <p className="text-xs text-stone-700 bg-white p-2 rounded-lg border border-stone-200 mt-1 italic font-medium">
+                  "{entry.preIntroDetails}"
+                </p>
+              )}
+            </div>
           </div>
 
           {/* Registered Participants Table */}

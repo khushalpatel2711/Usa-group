@@ -25,6 +25,7 @@ import {
   Trash2,
   History,
   Users,
+  Mic,
 } from 'lucide-react';
 import {
   RegistrationEntry,
@@ -40,6 +41,8 @@ import {
   downloadEntryParticipants,
   getParticipantDownloadFileName,
   exportAllParticipantsToCSV,
+  downloadEntryPreIntro,
+  exportPreIntroSheetToCSV,
   getStoredAdminFiles,
   clearAllEntries,
   deleteEntry,
@@ -320,6 +323,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </button>
 
             <button
+              onClick={() => exportPreIntroSheetToCSV(entries)}
+              disabled={entries.filter((e) => e.preIntroRequired).length === 0}
+              className="px-4 py-2 text-xs font-bold text-purple-950 bg-purple-100 hover:bg-purple-200 disabled:opacity-40 rounded-xl shadow-xs transition-colors flex items-center gap-1.5 border border-purple-300/60"
+              title="કાર્યક્રમ શરૂ થાય તે પહેલાં આપવાની માહિતી (પ્રિ-ઇન્ટ્રો / એન્કરિંગ શીટ) ડાઉનલોડ કરો"
+            >
+              <Mic className="w-4 h-4 text-purple-700" />
+              <span>
+                પ્રિ-ઇન્ટ્રો / એન્કરિંગ શીટ ({entries.filter((e) => e.preIntroRequired).length})
+              </span>
+            </button>
+
+            <button
               onClick={() => window.print()}
               disabled={entries.length === 0}
               className="px-4 py-2 text-xs font-bold text-stone-300 hover:text-white disabled:opacity-40 bg-white/10 hover:bg-white/20 rounded-xl transition-colors flex items-center gap-1.5"
@@ -570,17 +585,41 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         {entry.preIntroRequired && (
                           <>
                             <span>·</span>
-                            <span className="text-purple-700 font-semibold">
-                              એન્કરિંગ પ્રસ્તાવના છે
+                            <span className="text-purple-700 font-bold bg-purple-50 px-2 py-0.5 rounded border border-purple-200">
+                              🎤 પ્રિ-ઇન્ટ્રો માહિતી: YES
                             </span>
                           </>
                         )}
                       </div>
 
-                      {entry.preIntroDetails && (
-                        <p className="text-xs text-stone-600 bg-stone-50 p-2 rounded-lg mt-2 italic">
-                          "{entry.preIntroDetails}"
-                        </p>
+                      {/* Pre-Intro Stage Announcement Card & Download */}
+                      {entry.preIntroRequired && (
+                        <div className="mt-2.5 p-2.5 bg-purple-50/80 border border-purple-200 rounded-xl text-xs space-y-1.5 shadow-2xs">
+                          <div className="flex items-center justify-between font-bold text-purple-950 flex-wrap gap-2">
+                            <span className="flex items-center gap-1.5">
+                              <Mic className="w-3.5 h-3.5 text-purple-700 shrink-0" />
+                              <span>કાર્યક્રમ શરૂ થાય તે પહેલાં આપવાની માહિતી (Pre-Intro):</span>
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => downloadEntryPreIntro(entry)}
+                              className="px-2.5 py-1 bg-purple-200 hover:bg-purple-300 text-purple-950 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-colors border border-purple-300 shadow-2xs"
+                              title="આ કાર્યક્રમની પ્રિ-ઇન્ટ્રો માહિતી ફાઇલ ડાઉનલોડ કરો"
+                            >
+                              <Download className="w-3 h-3 text-purple-900" />
+                              <span>માહિતી ડાઉનલોડ (.txt)</span>
+                            </button>
+                          </div>
+                          {entry.preIntroDetails ? (
+                            <p className="text-xs text-purple-950 bg-white p-2 rounded-lg border border-purple-100 font-medium leading-relaxed">
+                              "{entry.preIntroDetails}"
+                            </p>
+                          ) : (
+                            <p className="text-[11px] text-purple-700 italic">
+                              (કાર્યક્રમ શરૂ થાય તે પહેલા માહિતી આપવાની હા પાડેલ છે)
+                            </p>
+                          )}
+                        </div>
                       )}
 
                       {/* Participant Names List */}
@@ -896,13 +935,25 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 શ્રી ઉમિયા સોશિયલ એક્ટિવિટી ગ્રુપ - નંદિની વિભાગ, નાશિક
               </p>
             </div>
-            <button
-              onClick={() => window.print()}
-              className="px-4 py-2 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 self-start"
-            >
-              <Printer className="w-4 h-4" />
-              <span>પ્રિન્ટ કરો (Print Stage Sheet)</span>
-            </button>
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                onClick={() => exportPreIntroSheetToCSV(entries)}
+                disabled={entries.filter((e) => e.preIntroRequired).length === 0}
+                className="px-3.5 py-2 bg-purple-100 hover:bg-purple-200 text-purple-950 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors border border-purple-300 shadow-2xs"
+                title="કાર્યક્રમ શરૂ થાય તે પહેલાં આપવાની માહિતી ડાઉનલોડ કરો"
+              >
+                <Mic className="w-4 h-4 text-purple-700" />
+                <span>એન્કરિંગ / પ્રિ-ઇન્ટ્રો શીટ ડાઉનલોડ ({entries.filter((e) => e.preIntroRequired).length})</span>
+              </button>
+
+              <button
+                onClick={() => window.print()}
+                className="px-4 py-2 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 self-start"
+              >
+                <Printer className="w-4 h-4" />
+                <span>પ્રિન્ટ કરો (Print Stage Sheet)</span>
+              </button>
+            </div>
           </div>
 
           <div className="overflow-x-auto">
@@ -915,6 +966,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <th className="p-3">કાર્યક્રમ / ગીત</th>
                   <th className="p-3">સમય</th>
                   <th className="p-3">તૈયાર કરાવનાર & નંબર</th>
+                  <th className="p-3">પ્રિ-ઇન્ટ્રો એન્કરિંગ માહિતી</th>
                   <th className="p-3">LED સ્ક્રીન</th>
                   <th className="p-3">સ્ટેટસ</th>
                 </tr>
@@ -945,6 +997,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     </td>
                     <td className="p-3 text-stone-700">
                       {item.coordinatorName} ({item.coordinatorPhone})
+                    </td>
+                    <td className="p-3">
+                      {item.preIntroRequired ? (
+                        <div className="space-y-1 max-w-xs">
+                          <span className="font-bold text-purple-800 text-[11px] bg-purple-100 px-1.5 py-0.5 rounded border border-purple-200 inline-block">
+                            હા (YES)
+                          </span>
+                          {item.preIntroDetails ? (
+                            <p className="text-[11px] text-stone-700 font-medium italic line-clamp-2">
+                              "{item.preIntroDetails}"
+                            </p>
+                          ) : (
+                            <span className="text-[10px] text-stone-400 block">(માહિતી આપવાની છે)</span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-stone-400">ના (NO)</span>
+                      )}
                     </td>
                     <td className="p-3 font-semibold">
                       {item.ledScreenRequired ? (
@@ -1117,6 +1187,48 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </div>
 
             <div className="p-6 space-y-4 max-h-[75vh] overflow-y-auto text-xs sm:text-sm">
+              
+              {/* Program Overview & Pre-Intro Details Card */}
+              <div className="p-3 bg-stone-50 rounded-2xl border border-stone-200 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-stone-900 text-sm">{selectedEntryForReview.performanceTitle}</span>
+                  <span className="font-mono text-stone-500 font-semibold">{selectedEntryForReview.formattedDuration} મિનિટ</span>
+                </div>
+                <div className="text-xs text-stone-600 flex items-center justify-between">
+                  <span>તૈયાર કરાવનાર: <strong>{selectedEntryForReview.coordinatorName}</strong></span>
+                  <span className="font-mono">{selectedEntryForReview.coordinatorPhone}</span>
+                </div>
+
+                {selectedEntryForReview.preIntroRequired && (
+                  <div className="p-2.5 bg-purple-50 rounded-xl border border-purple-200 space-y-1.5 mt-2">
+                    <div className="flex items-center justify-between font-bold text-purple-950 text-xs">
+                      <span className="flex items-center gap-1.5">
+                        <Mic className="w-3.5 h-3.5 text-purple-700" />
+                        <span>કાર્યક્રમ શરૂ થાય તે પહેલાં આપવાની માહિતી:</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => downloadEntryPreIntro(selectedEntryForReview)}
+                        className="px-2 py-0.5 bg-purple-200 hover:bg-purple-300 text-purple-900 rounded font-bold text-[10px] flex items-center gap-1 transition-colors border border-purple-300"
+                        title="પ્રિ-ઇન્ટ્રો ટેક્સ્ટ ફાઇલ ડાઉનલોડ કરો"
+                      >
+                        <Download className="w-3 h-3 text-purple-800" />
+                        <span>ડાઉનલોડ (.txt)</span>
+                      </button>
+                    </div>
+                    {selectedEntryForReview.preIntroDetails ? (
+                      <p className="text-xs text-purple-950 bg-white p-2 rounded-lg border border-purple-100 font-medium italic leading-relaxed">
+                        "{selectedEntryForReview.preIntroDetails}"
+                      </p>
+                    ) : (
+                      <p className="text-[11px] text-purple-700 italic">
+                        (માહિતી આપવાની હા પાડેલ છે)
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+
               <div>
                 <label className="block text-xs font-bold text-stone-700 uppercase mb-1">
                   કાર્યક્રમ સ્ટેટસ (Status):

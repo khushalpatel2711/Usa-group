@@ -364,7 +364,8 @@ export function exportEntriesToCSV(entries: RegistrationEntry[]): void {
     'સ્પર્ધકોની યાદી',
     'કાર્યક્રમ તૈયાર કરાવનાર નું નામ',
     'કાર્યક્રમ તૈયાર કરાવનાર નો નંબર',
-    'પ્રિ-ઇન્ટ્રો પ્રસ્તાવના',
+    'કાર્યક્રમ શરૂ થાય તે પહેલાં માહિતી (હા/ના)',
+    'કાર્યક્રમ શરૂ થાય તે પહેલાં આપવાની માહિતી (વિગત)',
     'LED સ્ક્રીન વિડિયો',
     'સ્ટેટસ',
     'રિહર્સલ તારીખ',
@@ -407,7 +408,8 @@ export function exportEntriesToCSV(entries: RegistrationEntry[]): void {
       `"${participantsList.replace(/"/g, '""')}"`,
       `"${(e.coordinatorName || '').replace(/"/g, '""')}"`,
       `"${(e.coordinatorPhone || '').replace(/"/g, '""')}"`,
-      e.preIntroRequired ? 'હા' : 'ના',
+      e.preIntroRequired ? 'હા (YES)' : 'ના (NO)',
+      `"${(e.preIntroRequired && e.preIntroDetails ? e.preIntroDetails : '').replace(/"/g, '""')}"`,
       e.ledScreenRequired ? 'હા' : 'ના',
       statusLabel,
       e.rehearsalDate || '',
@@ -482,6 +484,7 @@ export function downloadEntryParticipants(
     'ટોકન નંબર',
     'કાર્યક્રમ તૈયાર કરાવનાર નું નામ',
     'કાર્યક્રમ તૈયાર કરાવનાર નો નંબર',
+    'કાર્યક્રમ શરૂ થાય તે પહેલાં માહિતી (Pre-Intro)',
   ];
 
   const categoryLabel =
@@ -493,6 +496,12 @@ export function downloadEntryParticipants(
       ? 'નાટક'
       : `અન્ય ${entry.customCategory ? `(${entry.customCategory})` : ''}`;
 
+  const preIntroText = entry.preIntroRequired
+    ? entry.preIntroDetails
+      ? `હા: ${entry.preIntroDetails}`
+      : 'હા (YES)'
+    : 'ના (NO)';
+
   const rows = participants.map((p, idx) => [
     idx + 1,
     `"${(p.name || '').replace(/"/g, '""')}"`,
@@ -503,6 +512,7 @@ export function downloadEntryParticipants(
     `"${entry.entryNumber}"`,
     `"${(entry.coordinatorName || '').replace(/"/g, '""')}"`,
     `"${(entry.coordinatorPhone || '').replace(/"/g, '""')}"`,
+    `"${preIntroText.replace(/"/g, '""')}"`,
   ]);
 
   const csvContent =
@@ -547,6 +557,12 @@ export function exportAllParticipantsToCSV(entries: RegistrationEntry[]): void {
         ? 'સ્ક્રિપ્ટ મંજૂર'
         : 'પ્રતીક્ષામાં';
 
+    const preIntroText = entry.preIntroRequired
+      ? entry.preIntroDetails
+        ? `હા: ${entry.preIntroDetails}`
+        : 'હા (YES)'
+      : 'ના (NO)';
+
     const participants = entry.manualParticipants || [];
     if (participants.length > 0) {
       participants.forEach((p, idx) => {
@@ -561,6 +577,7 @@ export function exportAllParticipantsToCSV(entries: RegistrationEntry[]): void {
           `"${categoryLabel}"`,
           `"${(entry.coordinatorName || '').replace(/"/g, '""')}"`,
           `"${(entry.coordinatorPhone || '').replace(/"/g, '""')}"`,
+          `"${preIntroText.replace(/"/g, '""')}"`,
           statusLabel,
         ]);
       });
@@ -577,6 +594,7 @@ export function exportAllParticipantsToCSV(entries: RegistrationEntry[]): void {
         `"${categoryLabel}"`,
         `"${(entry.coordinatorName || '').replace(/"/g, '""')}"`,
         `"${(entry.coordinatorPhone || '').replace(/"/g, '""')}"`,
+        `"${preIntroText.replace(/"/g, '""')}"`,
         statusLabel,
       ]);
     }
@@ -593,6 +611,7 @@ export function exportAllParticipantsToCSV(entries: RegistrationEntry[]): void {
     'કેટેગરી',
     'કાર્યક્રમ તૈયાર કરાવનાર નું નામ',
     'કાર્યક્રમ તૈયાર કરાવનાર નો નંબર',
+    'કાર્યક્રમ શરૂ થાય તે પહેલાં માહિતી (Pre-Intro)',
     'સ્ટેટસ',
   ];
 
@@ -605,6 +624,111 @@ export function exportAllParticipantsToCSV(entries: RegistrationEntry[]): void {
   link.setAttribute(
     'download',
     `દશેરા_2026_તમામ_સ્પર્ધકોની_યાદી_${new Date().toISOString().slice(0, 10)}.csv`
+  );
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+/**
+ * Downloads a single entry's pre-intro stage announcement notes as a clean text file.
+ */
+export function downloadEntryPreIntro(entry: RegistrationEntry): void {
+  if (!entry.preIntroRequired && !entry.preIntroDetails) {
+    alert('આ કાર્યક્રમમાં શરૂઆતની કોઈ પ્રિ-ઇન્ટ્રો માહિતી નોંધાયેલ નથી.');
+    return;
+  }
+
+  const danceName = (entry.performanceTitle || '').trim();
+  const coordinator = (entry.coordinatorName || '').trim();
+  const safeTitle = (danceName || coordinator || 'કાર્યક્રમ')
+    .replace(/[/\\?%*:|"<>]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  const content = `======================================================================
+શ્રી ઉમિયા સોશિયલ એક્ટિવિટી ગ્રુપ - નંદિની વિભાગ , નાશિક
+દશેરા સાંસ્કૃતિક કાર્યક્રમ વર્ષ ૨૦૨૬
+----------------------------------------------------------------------
+સ્ટેજ એન્કરિંગ / ઉદ્ઘોષણા - કાર્યક્રમ શરૂ થાય તે પહેલાં આપવાની માહિતી
+======================================================================
+
+ટોકન નંબર: ${entry.entryNumber}
+કાર્યક્રમ / ડાન્સનું નામ: ${entry.performanceTitle}
+કેટેગરી: ${entry.category === 'raas_garba' ? 'રાસ ગરબા' : entry.category === 'dance' ? 'ડાન્સ' : entry.category === 'natak' ? 'નાટક' : `અન્ય (${entry.customCategory || ''})`}
+સમય મર્યાદા: ${entry.formattedDuration} મિનિટ
+તૈયાર કરાવનાર: ${entry.coordinatorName} (મોબાઈલ: ${entry.coordinatorPhone})
+કુલ કલાકારો: ${entry.manualParticipants?.length || 0}
+LED સ્ક્રીન જરૂરી: ${entry.ledScreenRequired ? 'હા (પેન ડ્રાઇવ)' : 'ના'}
+સ્ટેજ ક્રમ: ${entry.stageSequenceNumber ? `#${entry.stageSequenceNumber}` : 'નિર્ધારિત નથી'}
+
+----------------------------------------------------------------------
+📢 કાર્યક્રમ શરૂ થાય તે પહેલાં સ્ટેજ પર આપવાની માહિતી:
+----------------------------------------------------------------------
+${entry.preIntroDetails || '(માહિતી આપવાની હા પાડેલ છે, પરંતુ વિગત નોંધેલ નથી)'}
+======================================================================
+તારીખ: ${new Date(entry.submittedAt).toLocaleDateString('gu-IN')}
+`;
+
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.setAttribute('href', url);
+  link.setAttribute('download', `${safeTitle}_પ્રિ_ઇન્ટ્રો_માહિતી.txt`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+/**
+ * Downloads a dedicated Pre-Intro & Stage Anchoring sheet (CSV) for all entries
+ * where "કાર્યક્રમ શરૂ થાય તે પહેલા કાર્યક્રમ વિષે કઈ માહિતી આપવી છે" is YES.
+ */
+export function exportPreIntroSheetToCSV(entries: RegistrationEntry[]): void {
+  const introEntries = entries.filter((e) => e.preIntroRequired);
+  if (introEntries.length === 0) {
+    alert('કોઈપણ કાર્યક્રમમાં "કાર્યક્રમ શરૂ થાય તે પહેલા માહિતી આપવી છે: YES" નોંધાયેલ નથી.');
+    return;
+  }
+
+  const headers = [
+    'ક્રમ',
+    'સ્ટેજ ક્રમ',
+    'ટોકન નંબર',
+    'કાર્યક્રમ / ગીતનું નામ',
+    'કેટેગરી',
+    'સમય',
+    'તૈયાર કરાવનારનું નામ',
+    'મોબાઈલ નંબર',
+    'કુલ કલાકારો',
+    'LED સ્ક્રીન',
+    'કાર્યક્રમ શરૂ થાય તે પહેલાં આપવાની માહિતી / એન્કરિંગ નોંધ (Pre-Intro Announcement)',
+  ];
+
+  const rows = introEntries.map((e, idx) => [
+    idx + 1,
+    e.stageSequenceNumber ? `#${e.stageSequenceNumber}` : '-',
+    e.entryNumber,
+    `"${(e.performanceTitle || '').replace(/"/g, '""')}"`,
+    e.category === 'raas_garba' ? 'રાસ ગરબા' : e.category === 'dance' ? 'ડાન્સ' : e.category === 'natak' ? 'નાટક' : `અન્ય (${e.customCategory || ''})`,
+    `"${e.formattedDuration || ''}"`,
+    `"${(e.coordinatorName || '').replace(/"/g, '""')}"`,
+    `"${(e.coordinatorPhone || '').replace(/"/g, '""')}"`,
+    e.manualParticipants?.length || 0,
+    e.ledScreenRequired ? 'હા (પેન ડ્રાઇવ)' : 'ના',
+    `"${(e.preIntroDetails || 'હા').replace(/"/g, '""')}"`,
+  ]);
+
+  const csvContent =
+    'data:text/csv;charset=utf-8,\uFEFF' +
+    [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement('a');
+  link.setAttribute('href', encodedUri);
+  link.setAttribute(
+    'download',
+    `દશેરા_2026_પ્રિ_ઇન્ટ્રો_એન્કરિંગ_માહિતી_${new Date().toISOString().slice(0, 10)}.csv`
   );
   document.body.appendChild(link);
   link.click();
