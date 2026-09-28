@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShieldCheck, LogIn, LogOut, Phone, Award } from 'lucide-react';
+import { ShieldCheck, LogIn, LogOut, Phone, Award, Clock } from 'lucide-react';
 import { AdminUser } from '../types';
 
 interface HeaderProps {
@@ -11,6 +11,7 @@ interface HeaderProps {
   setActiveView: (view: 'form' | 'admin') => void;
   lang: 'gu' | 'en';
   setLang: (lang: 'gu' | 'en') => void;
+  autoLogoutSecondsLeft?: number;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -22,6 +23,7 @@ export const Header: React.FC<HeaderProps> = ({
   setActiveView,
   lang,
   setLang,
+  autoLogoutSecondsLeft,
 }) => {
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-amber-200/80 shadow-xs">
@@ -131,6 +133,20 @@ export const Header: React.FC<HeaderProps> = ({
                   Admin Active
                 </span>
               </button>
+
+              {autoLogoutSecondsLeft !== undefined && (
+                <div
+                  className={`hidden sm:inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-mono font-bold border transition-colors ${
+                    autoLogoutSecondsLeft <= 15
+                      ? 'bg-red-50 text-red-700 border-red-300 animate-pulse'
+                      : 'bg-amber-50 text-amber-900 border-amber-200'
+                  }`}
+                  title="૧ મિનિટ નિષ્ક્રિયતા બાદ આપોઆપ લૉગઆઉટ થશે"
+                >
+                  <Clock className="w-3 h-3 text-amber-700 shrink-0" />
+                  <span>00:{autoLogoutSecondsLeft < 10 ? `0${autoLogoutSecondsLeft}` : autoLogoutSecondsLeft}</span>
+                </div>
+              )}
 
               <button
                 onClick={onLogoutAdmin}

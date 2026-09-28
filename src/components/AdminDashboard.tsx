@@ -57,6 +57,8 @@ interface AdminDashboardProps {
   entries: RegistrationEntry[];
   onRefreshEntries: () => void;
   lang: 'gu' | 'en';
+  autoLogoutSecondsLeft?: number;
+  onResetAutoLogout?: () => void;
 }
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({
@@ -64,6 +66,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   entries,
   onRefreshEntries,
   lang,
+  autoLogoutSecondsLeft,
+  onResetAutoLogout,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -247,9 +251,36 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       <div className="bg-gradient-to-r from-stone-900 via-amber-950 to-stone-900 rounded-3xl text-white p-6 sm:p-8 mb-8 border border-amber-500/40 shadow-lg">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2 text-xs font-semibold text-amber-400 uppercase tracking-widest">
-              <ShieldCheck className="w-4 h-4 text-emerald-400" />
-              <span>સુરક્ષિત એડમિન સેશન (Admin Session Active)</span>
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <div className="flex items-center gap-2 text-xs font-semibold text-amber-400 uppercase tracking-widest">
+                <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                <span>સુરક્ષિત એડમિન સેશન (Active)</span>
+              </div>
+
+              {autoLogoutSecondsLeft !== undefined && (
+                <div
+                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold border transition-all ${
+                    autoLogoutSecondsLeft <= 15
+                      ? 'bg-red-950/90 text-red-200 border-red-500 shadow-xs animate-pulse'
+                      : 'bg-amber-900/60 text-amber-200 border-amber-600/60'
+                  }`}
+                  title="૧ મિનિટ નિષ્ક્રિયતા બાદ આપોઆપ લૉગઆઉટ થશે"
+                >
+                  <Clock className="w-3.5 h-3.5 text-amber-300 shrink-0" />
+                  <span>
+                    ઓટો-લૉગઆઉટ: 00:{autoLogoutSecondsLeft < 10 ? `0${autoLogoutSecondsLeft}` : autoLogoutSecondsLeft}
+                  </span>
+                  {onResetAutoLogout && (
+                    <button
+                      onClick={onResetAutoLogout}
+                      className="text-[10px] uppercase font-bold text-amber-300 hover:text-white underline ml-1 cursor-pointer"
+                      title="સમય રીસેટ કરો (Extend 1 Min)"
+                    >
+                      રીસેટ
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
             <h2 className="text-xl sm:text-2xl md:text-3xl font-bold font-festive mt-1">
               દશેરા સાંસ્કૃતિક સમિતિ મેનેજમેન્ટ પોર્ટલ
