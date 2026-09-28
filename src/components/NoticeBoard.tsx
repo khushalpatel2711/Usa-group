@@ -7,9 +7,9 @@ interface NoticeBoardProps {
 
 export const NoticeBoard: React.FC<NoticeBoardProps> = ({ lang }) => {
   const contacts = [
-    { name: 'KETAN DIWANI', guName: 'કેતન દીવાની', phone: '8888858257', role: 'સાંસ્કૃતિક સમિતિ પ્રમુખ' },
-    { name: 'GAURAV BHAWANI', guName: 'ગૌરવ ભવાની', phone: '9021223266', role: 'સાંસ્કૃતિક સમિતિ સભ્ય' },
-    { name: 'JIGNESH POKAR', guName: 'જીગ્નેશ પોકાર', phone: '9890191916', role: 'ટેકનિકલ & ઓડિયો સપોર્ટ' },
+    { name: 'KETAN DIWANI', guName: 'કેતન દીવાની', phone: '8888858257' },
+    { name: 'GAURAV BHAWANI', guName: 'ગૌરવ ભવાની', phone: '9021223266' },
+    { name: 'JIGNESH POKAR', guName: 'જીગ્નેશ પોકાર', phone: '9890191916' },
   ];
 
   return (
@@ -119,7 +119,6 @@ export const NoticeBoard: React.FC<NoticeBoardProps> = ({ lang }) => {
                 <div>
                   <div className="font-bold text-stone-900 text-xs sm:text-sm">{contact.guName}</div>
                   <div className="text-[11px] text-stone-500">{contact.name}</div>
-                  <div className="text-[10px] text-amber-800 font-medium mt-0.5">{contact.role}</div>
                 </div>
 
                 <div className="flex items-center justify-between mt-3 pt-2 border-t border-stone-100">

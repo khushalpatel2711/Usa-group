@@ -47,7 +47,7 @@ export interface AdminUser {
   id: string;
   email: string;
   name: string;
-  role: 'Cultural Committee Head' | 'Committee Member' | 'Stage Coordinator' | 'Technical Head';
+  role: 'Cultural Committee Member' | 'Committee Member' | 'Stage Coordinator' | 'Technical Head';
   phone: string;
   avatarInitials: string;
 }

@@ -39,7 +39,7 @@ const INITIAL_ADMIN_FILES: AdminUploadedFile[] = [
       uploadedAt: '2026-09-25T11:00:00.000Z',
       encryptedStatus: 'verified',
     },
-    uploadedBy: 'કેતન દીવાની (સાંસ્કૃતિક પ્રમુખ)',
+    uploadedBy: 'કેતન દીવાની (સાંસ્કૃતિક સમિતિ)',
     uploadedAt: '2026-09-25T11:00:00.000Z',
     notes: 'સાંસ્કૃતિક કાર્યક્રમનો કાર્યક્રમ વાઇઝ સમયપત્રક અને સ્ટેજ એન્ટ્રી ક્રમ.',
     isConfidential: true,
@@ -71,7 +71,7 @@ export const COMMITTEE_ACCOUNTS: AdminUser[] = [
     id: 'admin_ketan',
     email: 'ketan@umiya.org',
     name: 'કેતન દીવાની (Ketan Diwani)',
-    role: 'Cultural Committee Head',
+    role: 'Cultural Committee Member',
     phone: '8888858257',
     avatarInitials: 'KD',
   },
@@ -332,7 +332,14 @@ export function clearAllLogs(): void {
 export function getAdminSession(): AdminUser | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.ADMIN_SESSION);
-    return raw ? JSON.parse(raw) : null;
+    if (!raw) return null;
+    const user = JSON.parse(raw);
+    if (user && user.name && user.name.includes('પ્રમુખ')) {
+      user.name = user.name.replace(/પ્રમુખ/g, '').replace(/\s+/g, ' ').trim();
+      user.role = 'Cultural Committee Member';
+      localStorage.setItem(STORAGE_KEYS.ADMIN_SESSION, JSON.stringify(user));
+    }
+    return user;
   } catch {
     return null;
   }

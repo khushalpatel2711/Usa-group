@@ -52,12 +52,12 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
     setIsLoading(true);
     setTimeout(() => {
       setIsLoading(false);
-      // Log in as Primary Committee Admin
+      // Log in as Committee Admin
       const adminUser: AdminUser = {
         id: 'admin_active',
         email: 'admin@umiya.org',
-        name: 'સાંસ્કૃતિક સમિતિ પ્રમુખ (Admin)',
-        role: 'Cultural Committee Head',
+        name: 'સાંસ્કૃતિક સમિતિ (Admin)',
+        role: 'Cultural Committee Member',
         phone: '8888858257',
         avatarInitials: 'UA',
       };
@@ -154,7 +154,7 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
           </div>
 
           <p className="text-[11px] text-stone-400 text-center pt-1">
-            ફક્ત અધિકૃત સાંસ્કૃતિક સમિતિ સભ્યો માટે.
+            ફક્ત અધિકૃત સમિતિ એડમિન માટે.
           </p>
         </form>
       </div>
