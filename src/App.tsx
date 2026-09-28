@@ -227,7 +227,7 @@ export default function App() {
         <div className="max-w-5xl mx-auto mt-6 pt-6 border-t border-stone-800/80 text-center text-[11px] text-stone-500 flex flex-col sm:flex-row items-center justify-between gap-2">
           <span>© 2026 શ્રી ઉમિયા સોશિયલ એક્ટિવિટી ગ્રુપ - નંદિની વિભાગ, નાશિક. સર્વાધિકાર સુરક્ષિત.</span>
           <span className="flex items-center gap-1 text-stone-400">
-            <span>સંપર્ક હેલ્પલાઈન: 8888858257 · 9021223266</span>
+            <span>સંપર્ક હેલ્પલાઈન: 9890191916 · 8888858257 · 9021223266 · 7744064106</span>
           </span>
         </div>
       </footer>

@@ -203,7 +203,7 @@ export const SuccessReceiptModal: React.FC<SuccessReceiptModalProps> = ({
 
           {/* Helpline reminders */}
           <div className="text-[11px] text-stone-500 text-center pt-1">
-            કોઈપણ પૂછપરછ માટે સંપર્ક કરો: કેતન દીવાની (8888858257) · ગૌરવ ભવાની (9021223266) · જીગ્નેશ પોકાર (9890191916)
+            કોઈપણ પૂછપરછ માટે સંપર્ક કરો: જીગ્નેશ પોકાર (9890191916) · કેતન દીવાની (8888858257) · ગૌરવ ભવાની (9021223266) · ખુશાલ પજવાણી (7744064106)
           </div>
 
           {/* Actions */}

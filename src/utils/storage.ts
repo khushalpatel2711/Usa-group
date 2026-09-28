@@ -94,9 +94,9 @@ export const COMMITTEE_ACCOUNTS: AdminUser[] = [
   {
     id: 'admin_khushal',
     email: 'khushalpatel1997@gmail.com',
-    name: 'ખુશાલ પટેલ (Khushal Patel)',
+    name: 'ખુશાલ પજવાણી (Khushal Pajwani)',
     role: 'Stage Coordinator',
-    phone: '9898989898',
+    phone: '7744064106',
     avatarInitials: 'KP',
   },
 ];
