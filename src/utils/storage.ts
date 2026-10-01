@@ -1,4 +1,4 @@
-import { RegistrationEntry, AdminUser, AdminUploadedFile, AuditLog } from '../types';
+import { RegistrationEntry, AdminUser, AdminUploadedFile, AuditLog, FormStatusConfig } from '../types';
 
 const STORAGE_KEYS = {
   ENTRIES: 'dussehra_2026_registrations',
@@ -6,6 +6,7 @@ const STORAGE_KEYS = {
   ADMIN_FILES: 'dussehra_2026_admin_files',
   CURRENT_EMAIL: 'dussehra_2026_active_email',
   LOGS: 'dussehra_2026_audit_logs',
+  FORM_STATUS: 'dussehra_2026_form_status',
 };
 
 // Initial seeded entries - empty for fresh user submissions
@@ -736,4 +737,59 @@ export function exportPreIntroSheetToCSV(entries: RegistrationEntry[]): void {
   link.click();
   document.body.removeChild(link);
 }
+
+// ==========================================
+// FORM ONLINE / OFFLINE AVAILABILITY CONFIG
+// ==========================================
+
+export const DEFAULT_FORM_STATUS: FormStatusConfig = {
+  isOnline: true,
+  offlineMessageGu:
+    'દશેરા ૨૦૨૬ સાંસ્કૃતિક કાર્યક્રમ માટેનું ઓનલાઇન રજીસ્ટ્રેશન ફોર્મ હાલમાં સમિતિ દ્વારા બંધ (Offline) કરવામાં આવ્યું છે. કોઈપણ વિશેષ પૂછપરછ અથવા સહાય માટે નીચે આપેલા સમિતિ હોદ્દેદારોનો સંપર્ક કરો.',
+  offlineMessageEn:
+    'The online registration form for Dussehra 2026 Cultural Festival is currently offline. For any help or queries, please contact the committee coordinators below.',
+  lastUpdatedBy: 'સાંસ્કૃતિક સમિતિ',
+  lastUpdatedAt: new Date().toISOString(),
+};
+
+export function getStoredFormStatus(): FormStatusConfig {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.FORM_STATUS);
+    if (!raw) {
+      localStorage.setItem(STORAGE_KEYS.FORM_STATUS, JSON.stringify(DEFAULT_FORM_STATUS));
+      return DEFAULT_FORM_STATUS;
+    }
+    return { ...DEFAULT_FORM_STATUS, ...JSON.parse(raw) };
+  } catch (err) {
+    console.error('Error reading form status', err);
+    return DEFAULT_FORM_STATUS;
+  }
+}
+
+export function saveFormStatus(
+  updates: Partial<FormStatusConfig>,
+  adminName: string
+): FormStatusConfig {
+  const current = getStoredFormStatus();
+  const updated: FormStatusConfig = {
+    ...current,
+    ...updates,
+    lastUpdatedBy: adminName || 'સાંસ્કૃતિક સમિતિ એડમિન',
+    lastUpdatedAt: new Date().toISOString(),
+  };
+
+  localStorage.setItem(STORAGE_KEYS.FORM_STATUS, JSON.stringify(updated));
+
+  addAuditLog(
+    'form_status_changed',
+    `ફોર્મની ઓનલાઇન/ઓફલાઇન સ્થિતિ બદલીને: ${
+      updated.isOnline ? 'ઓનલાઇન (ONLINE - સક્રિય)' : 'ઓફલાઇન (OFFLINE - બંધ)'
+    } કરી.`,
+    adminName || 'સાંસ્કૃતિક સમિતિ એડમિન'
+  );
+
+  return updated;
+}
+
+
 

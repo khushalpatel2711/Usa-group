@@ -26,6 +26,8 @@ import {
   History,
   Users,
   Mic,
+  Power,
+  MessageSquare,
 } from 'lucide-react';
 import {
   RegistrationEntry,
@@ -34,6 +36,7 @@ import {
   ProgramCategory,
   AuditLog,
   UploadedFileMeta,
+  FormStatusConfig,
 } from '../types';
 import {
   updateEntryStatus,
@@ -51,6 +54,8 @@ import {
   getStoredLogs,
   deleteSingleLog,
   clearAllLogs,
+  getStoredFormStatus,
+  saveFormStatus,
 } from '../utils/storage';
 import { formatFileSize, formatGujaratiDate, downloadImageFile } from '../utils/crypto';
 import { AdminFileUploadModal } from './AdminFileUploadModal';
@@ -62,6 +67,8 @@ interface AdminDashboardProps {
   lang: 'gu' | 'en';
   autoLogoutSecondsLeft?: number;
   onResetAutoLogout?: () => void;
+  formStatus?: FormStatusConfig;
+  onFormStatusChanged?: (newStatus: FormStatusConfig) => void;
 }
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({
@@ -71,6 +78,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   lang,
   autoLogoutSecondsLeft,
   onResetAutoLogout,
+  formStatus,
+  onFormStatusChanged,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -78,6 +87,43 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [activeTab, setActiveTab] = useState<'entries' | 'admin_files' | 'schedule' | 'logs'>('entries');
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>(getStoredLogs());
   const [logSearchQuery, setLogSearchQuery] = useState('');
+
+  // Form Online / Offline State
+  const [currentFormStatus, setCurrentFormStatus] = useState<FormStatusConfig>(
+    formStatus || getStoredFormStatus()
+  );
+  const [isEditingOfflineMsg, setIsEditingOfflineMsg] = useState(false);
+  const [offlineMsgText, setOfflineMsgText] = useState(
+    currentFormStatus.offlineMessageGu || ''
+  );
+  const [formStatusToast, setFormStatusToast] = useState<string | null>(null);
+
+  const handleToggleFormStatus = (isOnline: boolean) => {
+    const updated = saveFormStatus({ isOnline }, adminUser.name);
+    setCurrentFormStatus(updated);
+    setAuditLogs(getStoredLogs());
+    if (onFormStatusChanged) {
+      onFormStatusChanged(updated);
+    }
+    setFormStatusToast(
+      isOnline
+        ? 'ફોર્મ સફળતાપૂર્વક ઓનલાઇન (ONLINE) થયું છે! હવે મુલાકાતીઓ સત્તાવાર ફોર્મ ભરી શકશે.'
+        : 'ફોર્મ સફળતાપૂર્વક ઓફલાઇન (OFFLINE) થયું છે! હવે મુલાકાતીઓને "FOR ANY HELP CONTACT" પેજ દેખાશે.'
+    );
+    setTimeout(() => setFormStatusToast(null), 5000);
+  };
+
+  const handleSaveOfflineMessage = () => {
+    const updated = saveFormStatus({ offlineMessageGu: offlineMsgText }, adminUser.name);
+    setCurrentFormStatus(updated);
+    setIsEditingOfflineMsg(false);
+    setAuditLogs(getStoredLogs());
+    if (onFormStatusChanged) {
+      onFormStatusChanged(updated);
+    }
+    setFormStatusToast('ઓફલાઇન નોટિસ સંદેશ સફળતાપૂર્વક સાચવવામાં આવ્યો છે.');
+    setTimeout(() => setFormStatusToast(null), 4000);
+  };
 
   // Modal states
   const [selectedEntryForReview, setSelectedEntryForReview] = useState<RegistrationEntry | null>(null);
@@ -250,6 +296,140 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
       
+      {/* Toast Notification */}
+      {formStatusToast && (
+        <div className="mb-6 p-4 bg-emerald-50 border-2 border-emerald-500 rounded-2xl flex items-center justify-between gap-3 text-emerald-900 shadow-md animate-in fade-in duration-200">
+          <div className="flex items-center gap-2.5 font-bold text-xs sm:text-sm">
+            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+            <span>{formStatusToast}</span>
+          </div>
+          <button
+            onClick={() => setFormStatusToast(null)}
+            className="text-xs font-bold text-emerald-800 hover:text-emerald-950 underline cursor-pointer"
+          >
+            બંધ કરો
+          </button>
+        </div>
+      )}
+
+      {/* FORM ONLINE / OFFLINE CONTROLLER BAR */}
+      <div
+        className={`rounded-3xl p-5 sm:p-6 mb-6 border transition-all duration-300 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4 ${
+          currentFormStatus.isOnline
+            ? 'bg-gradient-to-r from-emerald-50 via-white to-emerald-50/50 border-emerald-300'
+            : 'bg-gradient-to-r from-red-50 via-white to-red-50/50 border-red-300'
+        }`}
+      >
+        <div className="flex items-start sm:items-center gap-3.5">
+          <div
+            className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-2xs ${
+              currentFormStatus.isOnline
+                ? 'bg-emerald-600 text-white'
+                : 'bg-red-600 text-white'
+            }`}
+          >
+            <Power className="w-6 h-6" />
+          </div>
+
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-bold uppercase tracking-wider text-stone-600">
+                પોર્ટલ રજીસ્ટ્રેશન ફોર્મ સ્થિતિ:
+              </span>
+
+              {currentFormStatus.isOnline ? (
+                <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-extrabold bg-emerald-100 text-emerald-900 border border-emerald-300">
+                  <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse"></span>
+                  <span>ઓનલાઇન (ONLINE - ફોર્મ સક્રિય છે)</span>
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-extrabold bg-red-100 text-red-900 border border-red-300">
+                  <span className="w-2 h-2 rounded-full bg-red-600"></span>
+                  <span>ઓફલાઇન (OFFLINE - HELP પેજ દેખાય છે)</span>
+                </span>
+              )}
+            </div>
+
+            <p className="text-xs sm:text-sm text-stone-600 font-medium">
+              {currentFormStatus.isOnline ? (
+                <span>
+                  મુલાકાતીઓ સત્તાવાર પોર્ટલ પરથી ઓનલાઇન ફોર્મ ભરી શકે છે.
+                </span>
+              ) : (
+                <span>
+                  ફોર્મ બંધ છે. તમામ મુલાકાતીઓને{' '}
+                  <strong className="text-red-900">"FOR ANY HELP CONTACT"</strong> પેજ
+                  દેખાય છે.
+                </span>
+              )}
+            </p>
+          </div>
+        </div>
+
+        {/* Toggle Button & Edit Notice Message */}
+        <div className="flex items-center gap-2.5 w-full md:w-auto self-end md:self-auto justify-end flex-wrap">
+          <button
+            onClick={() => setIsEditingOfflineMsg(!isEditingOfflineMsg)}
+            className="px-3.5 py-2.5 text-xs font-bold text-stone-700 hover:text-stone-900 bg-stone-100 hover:bg-stone-200 rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer"
+            title="ઓફલાઇન સહાય સંદેશ સંપાદિત કરો"
+          >
+            <MessageSquare className="w-4 h-4 text-amber-700" />
+            <span>ઓફલાઇન નોટિસ</span>
+          </button>
+
+          <button
+            onClick={() => handleToggleFormStatus(!currentFormStatus.isOnline)}
+            className={`px-5 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer ${
+              currentFormStatus.isOnline
+                ? 'bg-red-600 hover:bg-red-700 text-white active:scale-95'
+                : 'bg-emerald-600 hover:bg-emerald-700 text-white active:scale-95'
+            }`}
+          >
+            <Power className="w-4 h-4" />
+            <span>
+              {currentFormStatus.isOnline
+                ? 'ફોર્મ ઓફલાઇન કરો (Take Offline)'
+                : 'ફોર્મ ઓનલાઇન કરો (Take Online)'}
+            </span>
+          </button>
+        </div>
+      </div>
+
+      {/* Expandable Offline Message Editor Drawer */}
+      {isEditingOfflineMsg && (
+        <div className="mb-6 p-5 bg-white rounded-3xl border border-stone-300 shadow-sm space-y-3 animate-in fade-in duration-200">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-stone-800 uppercase tracking-wider flex items-center gap-1.5">
+              <MessageSquare className="w-4 h-4 text-amber-700" />
+              <span>ઓફલાઇન હેલ્પ પેજ પર દેખાતો સંદેશ (Custom Offline Notice):</span>
+            </span>
+            <button
+              onClick={() => setIsEditingOfflineMsg(false)}
+              className="text-xs text-stone-500 hover:text-stone-800 cursor-pointer"
+            >
+              રદ કરો
+            </button>
+          </div>
+
+          <textarea
+            rows={2}
+            value={offlineMsgText}
+            onChange={(e) => setOfflineMsgText(e.target.value)}
+            placeholder="દા.ત. દશેરા ૨૦૨૬ સાંસ્કૃતિક કાર્યક્રમ માટેનું ઓનલાઇન રજીસ્ટ્રેશન ફોર્મ હાલમાં સમિતિ દ્વારા બંધ (Offline) કરવામાં આવ્યું છે..."
+            className="w-full p-3 text-xs sm:text-sm rounded-xl border border-stone-300 focus:ring-2 focus:ring-amber-500 font-medium"
+          />
+
+          <div className="flex justify-end gap-2">
+            <button
+              onClick={handleSaveOfflineMessage}
+              className="px-4 py-2 bg-amber-700 hover:bg-amber-800 text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
+            >
+              નોટિસ સાચવો (Save Notice)
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Admin Header with 2FA Indicator */}
       <div className="bg-gradient-to-r from-stone-900 via-amber-950 to-stone-900 rounded-3xl text-white p-6 sm:p-8 mb-8 border border-amber-500/40 shadow-lg">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -1127,6 +1307,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                               ? 'bg-red-100 text-red-800'
                               : log.action === 'file_uploaded'
                               ? 'bg-amber-100 text-amber-800'
+                              : log.action === 'form_status_changed'
+                              ? 'bg-purple-100 text-purple-800'
                               : 'bg-stone-100 text-stone-700'
                           }`}
                         >
@@ -1142,6 +1324,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             ? 'ફાઇલ ડિલીટ'
                             : log.action === 'all_entries_cleared'
                             ? 'ઓલ ક્લિયર'
+                            : log.action === 'form_status_changed'
+                            ? 'ફોર્મ સ્થિતિ'
                             : 'સિસ્ટમ'}
                         </span>
                       </td>

@@ -10,7 +10,6 @@ export const NoticeBoard: React.FC<NoticeBoardProps> = ({ lang }) => {
     { name: 'JIGNESH POKAR', guName: 'જીગ્નેશ પોકાર', phone: '9890191916' },
     { name: 'KETAN DIWANI', guName: 'કેતન દિવાણી', phone: '8888858257' },
     { name: 'GAURAV BHAWANI', guName: 'ગૌરવ ભાવાણી', phone: '9021223266' },
-    { name: 'KHUSHAL PAJWANI', guName: 'ખુશાલ પજવાણી', phone: '7744064106' },
   ];
 
   return (
@@ -111,7 +110,7 @@ export const NoticeBoard: React.FC<NoticeBoardProps> = ({ lang }) => {
             </h3>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
             {contacts.map((contact) => (
               <div
                 key={contact.phone}

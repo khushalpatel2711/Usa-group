@@ -76,6 +76,14 @@ export interface UploadProgressState {
   error?: string;
 }
 
+export interface FormStatusConfig {
+  isOnline: boolean;
+  offlineMessageGu?: string;
+  offlineMessageEn?: string;
+  lastUpdatedBy?: string;
+  lastUpdatedAt?: string;
+}
+
 export interface AuditLog {
   id: string;
   timestamp: string;
@@ -87,6 +95,7 @@ export interface AuditLog {
     | 'file_deleted'
     | 'admin_login'
     | 'all_entries_cleared'
+    | 'form_status_changed'
     | 'system';
   details: string;
   performedBy: string;

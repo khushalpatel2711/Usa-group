@@ -3,11 +3,12 @@ import { Header } from './components/Header';
 import { HeroBanner } from './components/HeroBanner';
 import { NoticeBoard } from './components/NoticeBoard';
 import { RegistrationForm } from './components/RegistrationForm';
+import { FormOfflineHelpPage } from './components/FormOfflineHelpPage';
 import { AdminLoginModal } from './components/AdminLoginModal';
 import { AdminDashboard } from './components/AdminDashboard';
 import { SuccessReceiptModal } from './components/SuccessReceiptModal';
-import { AdminUser, RegistrationEntry } from './types';
-import { getAdminSession, setAdminSession, getStoredEntries } from './utils/storage';
+import { AdminUser, RegistrationEntry, FormStatusConfig } from './types';
+import { getAdminSession, setAdminSession, getStoredEntries, getStoredFormStatus } from './utils/storage';
 import { ShieldCheck, Heart, Sparkles, MapPin, Calendar, Lock, Clock, AlertTriangle } from 'lucide-react';
 
 const AUTO_LOGOUT_SECONDS = 60; // 1 minute auto-logout
@@ -19,6 +20,7 @@ export default function App() {
   const [isAdminLoginModalOpen, setIsAdminLoginModalOpen] = useState(false);
   const [latestSubmittedEntry, setLatestSubmittedEntry] = useState<RegistrationEntry | null>(null);
   const [entries, setEntries] = useState<RegistrationEntry[]>([]);
+  const [formStatus, setFormStatus] = useState<FormStatusConfig>(getStoredFormStatus());
   
   // 1-minute auto-logout states
   const [autoLogoutSecondsLeft, setAutoLogoutSecondsLeft] = useState<number>(AUTO_LOGOUT_SECONDS);
@@ -135,17 +137,28 @@ export default function App() {
       {/* Main Viewport Router */}
       {activeView === 'form' ? (
         <main className="flex-1">
-          {/* Festive Hero Banner */}
-          <HeroBanner lang={lang} />
+          {formStatus.isOnline ? (
+            <>
+              {/* Festive Hero Banner */}
+              <HeroBanner lang={lang} />
 
-          {/* Official Rules & Guidelines + Contact Helpline */}
-          <NoticeBoard lang={lang} />
+              {/* Official Rules & Guidelines + Contact Helpline */}
+              <NoticeBoard lang={lang} />
 
-          {/* The Registration Form */}
-          <RegistrationForm
-            onSubmissionSuccess={handleSubmissionSuccess}
-            lang={lang}
-          />
+              {/* The Registration Form */}
+              <RegistrationForm
+                onSubmissionSuccess={handleSubmissionSuccess}
+                lang={lang}
+              />
+            </>
+          ) : (
+            /* Dedicated Offline "FOR ANY HELP CONTACT" Page */
+            <FormOfflineHelpPage
+              formStatus={formStatus}
+              onOpenAdminLogin={() => setIsAdminLoginModalOpen(true)}
+              lang={lang}
+            />
+          )}
         </main>
       ) : (
         <main className="flex-1">
@@ -157,6 +170,8 @@ export default function App() {
               lang={lang}
               autoLogoutSecondsLeft={autoLogoutSecondsLeft}
               onResetAutoLogout={handleResetAutoLogout}
+              formStatus={formStatus}
+              onFormStatusChanged={(newStatus) => setFormStatus(newStatus)}
             />
           ) : (
             <div className="max-w-md mx-auto my-20 p-8 bg-white rounded-3xl border border-stone-200 text-center shadow-lg">
@@ -227,7 +242,7 @@ export default function App() {
         <div className="max-w-5xl mx-auto mt-6 pt-6 border-t border-stone-800/80 text-center text-[11px] text-stone-500 flex flex-col sm:flex-row items-center justify-between gap-2">
           <span>© 2026 શ્રી ઉમિયા સોશિયલ એક્ટિવિટી ગ્રુપ - નંદિની વિભાગ, નાશિક. સર્વાધિકાર સુરક્ષિત.</span>
           <span className="flex items-center gap-1 text-stone-400">
-            <span>સંપર્ક હેલ્પલાઈન: 9890191916 · 8888858257 · 9021223266 · 7744064106</span>
+            <span>સંપર્ક હેલ્પલાઈન: 9890191916 · 8888858257 · 9021223266</span>
           </span>
         </div>
       </footer>
