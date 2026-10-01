@@ -58,6 +58,7 @@ import {
   saveFormStatus,
 } from '../utils/storage';
 import { formatFileSize, formatGujaratiDate, downloadImageFile } from '../utils/crypto';
+import { downloadHiQualityMedia } from '../utils/mediaDb';
 import { AdminFileUploadModal } from './AdminFileUploadModal';
 
 interface AdminDashboardProps {
@@ -875,12 +876,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 : 'audio',
                               title: entry.songFile!.originalName,
                               url: entry.songFile!.dataUrl,
+                              fileMeta: entry.songFile,
                             })
                           }
-                          className="px-2.5 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-semibold flex items-center gap-1.5"
+                          className="px-2.5 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-semibold flex items-center gap-1.5 cursor-pointer shadow-2xs"
                         >
                           <Music className="w-3.5 h-3.5 text-amber-700" />
                           <span>ગીત સાંભળો ({formatFileSize(entry.songFile.size)})</span>
+                          {entry.songFile.qualityBadge && (
+                            <span className="text-[10px] bg-amber-200/90 text-amber-950 font-bold px-1.5 py-0.5 rounded shadow-2xs">
+                              HQ
+                            </span>
+                          )}
                         </button>
                       ) : (
                         <span className="px-2.5 py-1 rounded-lg bg-stone-100 text-stone-600 border border-stone-200 text-[11px] font-semibold flex items-center gap-1">
@@ -1549,17 +1556,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   </button>
                 )}
 
-                {(activeMediaModal.type === 'audio' || activeMediaModal.type === 'video') &&
-                  activeMediaModal.url && (
-                    <a
-                      href={activeMediaModal.url}
-                      download={activeMediaModal.title}
-                      className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors shadow-xs"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                      <span>ડાઉનલોડ</span>
-                    </a>
-                  )}
+                {(activeMediaModal.type === 'audio' || activeMediaModal.type === 'video') && (
+                  <button
+                    onClick={() =>
+                      downloadHiQualityMedia(
+                        activeMediaModal.fileMeta?.id || '',
+                        activeMediaModal.url,
+                        activeMediaModal.title
+                      )
+                    }
+                    className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>માસ્ટર ફાઇલ ડાઉનલોડ (HQ)</span>
+                  </button>
+                )}
 
                 <button
                   onClick={() => setActiveMediaModal(null)}

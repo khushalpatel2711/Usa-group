@@ -16,6 +16,16 @@ export interface UploadedFileMeta {
   dataUrl?: string;
   uploadedAt: string;
   encryptedStatus: 'client_encrypted' | 'verified';
+  qualityBadge?: string;
+  mediaInfo?: {
+    durationSeconds?: number;
+    formattedDuration?: string;
+    resolution?: string;
+    sampleRate?: string;
+    channels?: string;
+    bitrateEst?: string;
+    isHiQuality: boolean;
+  };
 }
 
 export interface RegistrationEntry {

@@ -179,12 +179,19 @@ export const SuccessReceiptModal: React.FC<SuccessReceiptModalProps> = ({
             <div className="space-y-1.5 font-mono text-[11px] text-stone-600">
               {entry.songFile ? (
                 <div className="flex items-center justify-between bg-white p-2 rounded-lg border border-stone-200">
-                  <span className="truncate max-w-[240px]">
+                  <span className="truncate max-w-[220px]">
                     🎵 {entry.songFile.originalName} ({formatFileSize(entry.songFile.size)})
                   </span>
-                  <span className="text-[10px] text-emerald-700 font-semibold shrink-0">
-                    AES-256 ✓
-                  </span>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {entry.songFile.qualityBadge && (
+                      <span className="text-[10px] text-amber-900 font-bold bg-amber-100 px-1.5 py-0.5 rounded border border-amber-300">
+                        💎 HQ
+                      </span>
+                    )}
+                    <span className="text-[10px] text-emerald-700 font-semibold">
+                      AES-256 ✓
+                    </span>
+                  </div>
                 </div>
               ) : (
                 <div className="flex items-center justify-between bg-white p-2 rounded-lg border border-stone-200 font-sans">
