@@ -93,6 +93,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
   const [preIntroRequired, setPreIntroRequired] = useState<'YES' | 'NO' | ''>('');
   const [preIntroDetails, setPreIntroDetails] = useState('');
   const [ledScreenRequired, setLedScreenRequired] = useState<'YES' | 'NO' | ''>('');
+  const [songUploadChoice, setSongUploadChoice] = useState<'YES' | 'NO' | ''>('');
 
   // Validation errors
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -181,8 +182,10 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
       newErrors.ledScreen = 'કૃપા કરીને YES અથવા NO પસંદ કરો.';
     }
 
-    if (!songFile) {
-      newErrors.songFile = 'કાર્યક્રમનું ગીત (ઓડિયો અથવા વિડિયો ફાઇલ) અપલોડ કરવી ફરજિયાત છે.';
+    if (!songUploadChoice) {
+      newErrors.songUploadChoice = 'કૃપા કરીને YES અથવા NO પસંદ કરો.';
+    } else if (songUploadChoice === 'YES' && !songFile) {
+      newErrors.songFile = 'તમે YES પસંદ કર્યું હોવાથી કાર્યક્રમનું ગીત (ઓડિયો/વિડિયો ફાઇલ) અપલોડ કરવું ફરજિયાત છે.';
     }
 
     setErrors(newErrors);
@@ -233,7 +236,8 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
       preIntroRequired: preIntroRequired === 'YES',
       preIntroDetails: preIntroRequired === 'YES' ? preIntroDetails.trim() : undefined,
       ledScreenRequired: ledScreenRequired === 'YES',
-      songFile: songFile!,
+      songUploadChoice: songUploadChoice as 'YES' | 'NO',
+      songFile: songUploadChoice === 'YES' ? songFile : undefined,
       status: 'pending',
     };
 
@@ -779,31 +783,98 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             )}
           </div>
 
-          {/* 9. PLEASE UPLOAD SONG HERE (Audio or Video, Max 1 GB) */}
-          <div id="field-songFile" className="space-y-4 border-b border-stone-100 pb-6">
-            <FileUploadWithProgress
-              id="song-file-upload"
-              label="PLEASE UPLOAD SONG HERE"
-              subLabel="Upload 1 supported file: audio or video. Max 1 GB."
-              acceptTypes="audio/*,video/*,.mp3,.wav,.m4a,.aac,.mp4,.mov,.mkv"
-              maxSizeBytes={1024 * 1024 * 1024} // 1 GB
-              maxSizeLabel="1 GB"
-              fileKind="media"
-              currentFile={songFile}
-              onFileUploaded={(meta) => {
-                setSongFile(meta);
-                if (errors.songFile) {
-                  const updated = { ...errors };
-                  delete updated.songFile;
-                  setErrors(updated);
-                }
-              }}
-              onFileRemoved={() => setSongFile(undefined)}
-              isRequired
-            />
+          {/* 9. PLEASE UPLOAD SONG HERE (YES / NO option) */}
+          <div id="field-songUploadChoice" className="space-y-3 border-b border-stone-100 pb-6">
+            <div>
+              <label className="block text-sm sm:text-base font-bold text-stone-900">
+                PLEASE UPLOAD SONG HERE (અહીં ગીત / ઓડિયો અપલોડ કરવું છે?) <span className="text-red-600">*</span>
+              </label>
+              <p className="text-xs text-stone-600 mt-1 leading-relaxed">
+                જો તમારી પાસે તૈયાર ઓડિયો કે વિડિયો ફાઇલ હોય તો <strong>'YES'</strong> પસંદ કરી અહીં અપલોડ કરો. જો હાલમાં ફાઇલ ન હોય તો <strong>'NO'</strong> પસંદ કરો.
+              </p>
+            </div>
 
-            {errors.songFile && (
-              <p className="text-xs text-red-600 font-medium">{errors.songFile}</p>
+            <div className="flex items-center gap-6">
+              {['YES', 'NO'].map((val) => (
+                <label
+                  key={val}
+                  className={`flex items-center gap-2.5 px-5 py-2.5 rounded-xl border cursor-pointer font-bold text-sm transition-all ${
+                    songUploadChoice === val
+                      ? 'border-amber-600 bg-amber-50/70 text-amber-900'
+                      : 'border-stone-200 hover:border-amber-300 text-stone-700'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="songUploadOption"
+                    value={val}
+                    checked={songUploadChoice === val}
+                    onChange={() => {
+                      setSongUploadChoice(val as 'YES' | 'NO');
+                      if (val === 'NO') {
+                        setSongFile(undefined);
+                      }
+                      if (errors.songUploadChoice || errors.songFile) {
+                        const updated = { ...errors };
+                        delete updated.songUploadChoice;
+                        delete updated.songFile;
+                        setErrors(updated);
+                      }
+                    }}
+                    className="w-4 h-4 text-amber-700 border-stone-300 focus:ring-amber-500"
+                  />
+                  <span>{val}</span>
+                </label>
+              ))}
+            </div>
+
+            {errors.songUploadChoice && (
+              <p className="text-xs text-red-600 font-medium">{errors.songUploadChoice}</p>
+            )}
+
+            {/* If YES: Show File Upload with Progress */}
+            {songUploadChoice === 'YES' && (
+              <div id="field-songFile" className="space-y-3 pt-2">
+                <FileUploadWithProgress
+                  id="song-file-upload"
+                  label="PLEASE UPLOAD SONG HERE (ગીત / ઓડિયો ફાઇલ અપલોડ કરો)"
+                  subLabel="Upload 1 supported file: audio or video (MP3, WAV, M4A, AAC, MP4, MOV). Max 1 GB."
+                  acceptTypes="audio/*,video/*,.mp3,.wav,.m4a,.aac,.mp4,.mov,.mkv"
+                  maxSizeBytes={1024 * 1024 * 1024} // 1 GB
+                  maxSizeLabel="1 GB"
+                  fileKind="media"
+                  currentFile={songFile}
+                  onFileUploaded={(meta) => {
+                    setSongFile(meta);
+                    if (errors.songFile) {
+                      const updated = { ...errors };
+                      delete updated.songFile;
+                      setErrors(updated);
+                    }
+                  }}
+                  onFileRemoved={() => setSongFile(undefined)}
+                  isRequired
+                />
+
+                {errors.songFile && (
+                  <p className="text-xs text-red-600 font-medium">{errors.songFile}</p>
+                )}
+              </div>
+            )}
+
+            {/* If NO: Informative note that song must be given on pen drive or live */}
+            {songUploadChoice === 'NO' && (
+              <div className="p-3.5 bg-amber-50/90 border border-amber-300 rounded-xl text-xs sm:text-[13px] text-amber-950 flex items-start gap-2.5">
+                <AlertCircle className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <p className="font-bold text-amber-900">
+                    માહિતી (Note for Song Submission):
+                  </p>
+                  <p className="leading-relaxed text-stone-700 font-medium">
+                    તમે ઓનલાઇન ગીત અપલોડ નથી કરી રહ્યા (NO). કૃપા કરીને કાર્યક્રમનું ગીત / ઓડિયો <strong>પેન ડ્રાઇવ (Pen Drive)</strong> માં રિહર્સલના દિવસે સાંસ્કૃતિક સમિતિને જમા કરાવવાનું રહેશે અથવા લાઇવ મ્યુઝિક / ગાયન રહેશે.
+                  </p>
+                </div>
+              </div>
             )}
           </div>
 

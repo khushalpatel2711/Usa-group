@@ -36,7 +36,8 @@ export interface RegistrationEntry {
   preIntroRequired: boolean; // કાર્યક્રમ શરૂ થાય તે પહેલા માહિતી
   preIntroDetails?: string;
   ledScreenRequired: boolean; // LED સ્ક્રીન વિડિયો
-  songFile: UploadedFileMeta;
+  songUploadChoice?: 'YES' | 'NO'; // ગીત અપલોડ વિકલ્પ
+  songFile?: UploadedFileMeta;
   status: 'pending' | 'script_approved' | 'rehearsal_scheduled' | 'confirmed' | 'rejected';
   adminNotes?: string;
   rehearsalDate?: string;

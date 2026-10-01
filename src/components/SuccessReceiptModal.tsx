@@ -177,14 +177,25 @@ export const SuccessReceiptModal: React.FC<SuccessReceiptModalProps> = ({
             </div>
 
             <div className="space-y-1.5 font-mono text-[11px] text-stone-600">
-              <div className="flex items-center justify-between bg-white p-2 rounded-lg border border-stone-200">
-                <span className="truncate max-w-[240px]">
-                  🎵 {entry.songFile.originalName} ({formatFileSize(entry.songFile.size)})
-                </span>
-                <span className="text-[10px] text-emerald-700 font-semibold shrink-0">
-                  AES-256 ✓
-                </span>
-              </div>
+              {entry.songFile ? (
+                <div className="flex items-center justify-between bg-white p-2 rounded-lg border border-stone-200">
+                  <span className="truncate max-w-[240px]">
+                    🎵 {entry.songFile.originalName} ({formatFileSize(entry.songFile.size)})
+                  </span>
+                  <span className="text-[10px] text-emerald-700 font-semibold shrink-0">
+                    AES-256 ✓
+                  </span>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between bg-white p-2 rounded-lg border border-stone-200 font-sans">
+                  <span className="text-stone-700 text-xs">
+                    🎵 ગીત: ઓનલાઇન અપલોડ કરેલ નથી (પેન ડ્રાઇવમાં આપવાનું રહેશે)
+                  </span>
+                  <span className="text-[10px] text-amber-800 font-semibold shrink-0 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                    NO (પેન ડ્રાઇવ)
+                  </span>
+                </div>
+              )}
 
               {entry.participantsPhotoFile && (
                 <div className="flex items-center justify-between bg-white p-2 rounded-lg border border-stone-200">
@@ -217,7 +228,7 @@ export const SuccessReceiptModal: React.FC<SuccessReceiptModalProps> = ({
 
           {/* Helpline reminders */}
           <div className="text-[11px] text-stone-500 text-center pt-1">
-            કોઈપણ પૂછપરછ માટે સંપર્ક કરો: જીગ્નેશ પોકાર (9890191916) · કેતન દીવાની (8888858257) · ગૌરવ ભવાની (9021223266) · ખુશાલ પજવાણી (7744064106)
+            કોઈપણ પૂછપરછ માટે સંપર્ક કરો: જીગ્નેશ પોકાર (9890191916) · કેતન દિવાણી (8888858257) · ગૌરવ ભાવાણી (9021223266) · ખુશાલ પજવાણી (7744064106)
           </div>
 
           {/* Actions */}

@@ -8,8 +8,8 @@ interface NoticeBoardProps {
 export const NoticeBoard: React.FC<NoticeBoardProps> = ({ lang }) => {
   const contacts = [
     { name: 'JIGNESH POKAR', guName: 'જીગ્નેશ પોકાર', phone: '9890191916' },
-    { name: 'KETAN DIWANI', guName: 'કેતન દીવાની', phone: '8888858257' },
-    { name: 'GAURAV BHAWANI', guName: 'ગૌરવ ભવાની', phone: '9021223266' },
+    { name: 'KETAN DIWANI', guName: 'કેતન દિવાણી', phone: '8888858257' },
+    { name: 'GAURAV BHAWANI', guName: 'ગૌરવ ભાવાણી', phone: '9021223266' },
     { name: 'KHUSHAL PAJWANI', guName: 'ખુશાલ પજવાણી', phone: '7744064106' },
   ];
 

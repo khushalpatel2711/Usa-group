@@ -686,21 +686,28 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-stone-100 text-xs">
                     <div className="flex items-center gap-2 flex-wrap">
                       {/* Audio/Video play button */}
-                      <button
-                        onClick={() =>
-                          setActiveMediaModal({
-                            type: entry.songFile.mimeType.startsWith('video/')
-                              ? 'video'
-                              : 'audio',
-                            title: entry.songFile.originalName,
-                            url: entry.songFile.dataUrl,
-                          })
-                        }
-                        className="px-2.5 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-semibold flex items-center gap-1.5"
-                      >
-                        <Music className="w-3.5 h-3.5 text-amber-700" />
-                        <span>ગીત સાંભળો ({formatFileSize(entry.songFile.size)})</span>
-                      </button>
+                      {entry.songFile ? (
+                        <button
+                          onClick={() =>
+                            setActiveMediaModal({
+                              type: entry.songFile!.mimeType.startsWith('video/')
+                                ? 'video'
+                                : 'audio',
+                              title: entry.songFile!.originalName,
+                              url: entry.songFile!.dataUrl,
+                            })
+                          }
+                          className="px-2.5 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-semibold flex items-center gap-1.5"
+                        >
+                          <Music className="w-3.5 h-3.5 text-amber-700" />
+                          <span>ગીત સાંભળો ({formatFileSize(entry.songFile.size)})</span>
+                        </button>
+                      ) : (
+                        <span className="px-2.5 py-1 rounded-lg bg-stone-100 text-stone-600 border border-stone-200 text-[11px] font-semibold flex items-center gap-1">
+                          <Music className="w-3 h-3 text-stone-400" />
+                          <span>ગીત: પેન ડ્રાઇવમાં આપશે (NO)</span>
+                        </span>
+                      )}
 
                       {/* Participant Names CSV download button with Dance / Group Name */}
                       {entry.manualParticipants && entry.manualParticipants.length > 0 && (
