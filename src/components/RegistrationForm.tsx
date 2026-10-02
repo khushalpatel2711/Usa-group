@@ -45,8 +45,11 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
   // Files
   const [songFile, setSongFile] = useState<UploadedFileMeta | undefined>(undefined);
 
-  // Direct participant list table
+  // Direct participant list table (Minimum 4 and above members required)
   const [manualParticipants, setManualParticipants] = useState<Participant[]>([
+    { name: '', age: '' },
+    { name: '', age: '' },
+    { name: '', age: '' },
     { name: '', age: '' },
   ]);
 
@@ -105,8 +108,13 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
   };
 
   const handleRemoveParticipantRow = (index: number) => {
-    if (manualParticipants.length > 1) {
+    if (manualParticipants.length > 4) {
       setManualParticipants(manualParticipants.filter((_, i) => i !== index));
+    } else {
+      // If 4 or fewer rows, clear the fields instead of removing to maintain 4 slots
+      const updated = [...manualParticipants];
+      updated[index] = { name: '', age: '' };
+      setManualParticipants(updated);
     }
   };
 
@@ -114,7 +122,8 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
     const updated = [...manualParticipants];
     updated[index][field] = value;
     setManualParticipants(updated);
-    if (errors.participants && updated.some((p) => p.name.trim() !== '')) {
+    const validCount = updated.filter((p) => p.name.trim() !== '').length;
+    if (errors.participants && validCount >= 4) {
       const updatedErrors = { ...errors };
       delete updatedErrors.participants;
       setErrors(updatedErrors);
@@ -145,9 +154,9 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
     const validParticipantsList = manualParticipants.filter(
       (p) => p.name.trim() !== ''
     );
-    if (validParticipantsList.length === 0) {
+    if (validParticipantsList.length < 4) {
       newErrors.participants =
-        'કાર્યક્રમ માં ભાગ લેનાર ઓછામાં ઓછા ૧ સભ્યનું પૂરું નામ ટેબલમાં લખવું ફરજિયાત છે.';
+        `કાર્યક્રમ માં ભાગ લેનાર ઓછામાં ઓછા ૪ સભ્યોના પૂરા નામ લખવા ફરજિયાત છે (હાલમાં ${validParticipantsList.length} સભ્યો લખ્યા છે). Minimum 4 and above members required.`;
     }
 
     if (!coordinatorName.trim()) {
@@ -461,26 +470,40 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             )}
           </div>
 
-          {/* 5. કાર્યક્રમ માં ભાગ લેનારના નામ (Participant Names Table) */}
+          {/* 5. કાર્યક્રમ માં ભાગ લેનારના નામ (Participant Names Table - Min 4 Required) */}
           <div id="field-participants" className="space-y-4 border-b border-stone-100 pb-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <div>
-                <label className="block text-sm sm:text-base font-bold text-stone-900 flex items-center gap-2">
+                <label className="block text-sm sm:text-base font-bold text-stone-900 flex items-center gap-2 flex-wrap">
                   <span>કાર્યક્રમ માં ભાગ લેનારના નામ</span>
                   <span className="text-red-600">*</span>
-                  <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300">
-                    {manualParticipants.filter((p) => p.name.trim() !== '').length} સભ્યો નોંધાયા
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300">
+                    લઘુત્તમ ૪ અથવા વધુ સભ્યો (Min 4 & Above)
                   </span>
+                  {manualParticipants.filter((p) => p.name.trim() !== '').length >= 4 ? (
+                    <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1 shadow-2xs">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>{manualParticipants.filter((p) => p.name.trim() !== '').length} સભ્યો નોંધાયા (માન્ય)</span>
+                    </span>
+                  ) : (
+                    <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-300 flex items-center gap-1 shadow-2xs">
+                      <AlertCircle className="w-3.5 h-3.5 text-amber-700" />
+                      <span>
+                        {manualParticipants.filter((p) => p.name.trim() !== '').length} / ૪ સભ્યો (હજુ{' '}
+                        {Math.max(0, 4 - manualParticipants.filter((p) => p.name.trim() !== '').length)} સભ્યો બાકી)
+                      </span>
+                    </span>
+                  )}
                 </label>
-                <p className="text-xs sm:text-sm text-stone-600 mt-0.5 font-medium">
-                  ભાગ લેનાર દરેક સભ્યનું પૂરું નામ અને ઉંમર નીચેના ટેબલમાં ઉમેરો.
+                <p className="text-xs sm:text-sm text-stone-600 mt-1 font-medium">
+                  કાર્યક્રમ માં ભાગ લેનાર ઓછામાં ઓછા ૪ કે તેથી વધુ સભ્યોનું પૂરું નામ અને ઉંમર નીચેના ટેબલમાં ઉમેરો (Minimum 4 and above members required).
                 </p>
               </div>
 
               <button
                 type="button"
                 onClick={handleAddParticipantRow}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-amber-950 bg-amber-100 hover:bg-amber-200 border border-amber-300 rounded-xl transition-all self-start sm:self-auto shadow-2xs active:scale-95"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-amber-950 bg-amber-100 hover:bg-amber-200 border border-amber-300 rounded-xl transition-all self-start sm:self-auto shadow-2xs active:scale-95 cursor-pointer"
               >
                 <Plus className="w-4 h-4 text-amber-800" />
                 <span>+ વધુ સભ્ય ઉમેરો (Add Member)</span>
@@ -491,9 +514,11 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
               {/* Table Column Headers */}
               <div className="hidden sm:grid grid-cols-12 gap-3 text-xs font-bold text-stone-600 px-2 pb-1 border-b border-stone-200/80">
                 <div className="col-span-1 text-center font-mono">ક્રમ</div>
-                <div className="col-span-7">સભ્યનું પૂરું નામ (Full Name) <span className="text-red-600">*</span></div>
+                <div className="col-span-7">
+                  સભ્યનું પૂરું નામ (Full Name) <span className="text-red-600 font-bold">* (લઘુત્તમ ૪ સભ્યો)</span>
+                </div>
                 <div className="col-span-3 text-center">ઉંમર (Age)</div>
-                <div className="col-span-1 text-center">હટાવો</div>
+                <div className="col-span-1 text-center">ક્રિયા</div>
               </div>
 
               {/* Rows */}
@@ -501,15 +526,25 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                 {manualParticipants.map((p, idx) => (
                   <div
                     key={idx}
-                    className="flex flex-col sm:grid sm:grid-cols-12 gap-2 sm:gap-3 items-stretch sm:items-center bg-white p-2.5 sm:p-2 rounded-xl border border-stone-200 shadow-2xs hover:border-amber-300 transition-colors"
+                    className={`flex flex-col sm:grid sm:grid-cols-12 gap-2 sm:gap-3 items-stretch sm:items-center bg-white p-2.5 sm:p-2 rounded-xl border transition-colors ${
+                      idx < 4 && !p.name.trim()
+                        ? 'border-amber-300/80 bg-amber-50/30'
+                        : 'border-stone-200 hover:border-amber-300'
+                    } shadow-2xs`}
                   >
                     {/* Index Badge */}
                     <div className="col-span-1 flex items-center gap-2 sm:justify-center">
-                      <span className="w-6 h-6 rounded-full bg-amber-100 text-amber-900 font-bold font-mono text-xs flex items-center justify-center shrink-0 border border-amber-200">
+                      <span
+                        className={`w-6 h-6 rounded-full font-bold font-mono text-xs flex items-center justify-center shrink-0 border ${
+                          idx < 4
+                            ? 'bg-amber-100 text-amber-900 border-amber-300'
+                            : 'bg-stone-100 text-stone-700 border-stone-200'
+                        }`}
+                      >
                         {idx + 1}
                       </span>
                       <span className="sm:hidden text-xs font-bold text-stone-700">
-                        સભ્ય #{idx + 1}
+                        સભ્ય #{idx + 1} {idx < 4 && <span className="text-red-600 font-bold">* (ફરજિયાત)</span>}
                       </span>
                     </div>
 
@@ -517,11 +552,15 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                     <div className="col-span-7">
                       <input
                         type="text"
-                        placeholder="દા.ત. રિયા પટેલ / આયુષ શાહ"
+                        placeholder={idx < 4 ? `સભ્ય #${idx + 1} નું પૂરું નામ (ફરજિયાત)` : 'દા.ત. રિયા પટેલ / આયુષ શાહ'}
                         value={p.name}
                         onChange={(e) => handleParticipantChange(idx, 'name', e.target.value)}
-                        className="w-full px-3 py-2 text-xs sm:text-sm rounded-lg border border-stone-300 focus:border-amber-600 focus:ring-2 focus:ring-amber-500/20 font-medium text-stone-900"
-                        required={idx === 0}
+                        className={`w-full px-3 py-2 text-xs sm:text-sm rounded-lg border focus:ring-2 font-medium text-stone-900 ${
+                          idx < 4 && !p.name.trim() && errors.participants
+                            ? 'border-red-400 focus:border-red-600 focus:ring-red-400/20 bg-red-50/30'
+                            : 'border-stone-300 focus:border-amber-600 focus:ring-amber-500/20'
+                        }`}
+                        required={idx < 4}
                       />
                     </div>
 
@@ -543,9 +582,8 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                       <button
                         type="button"
                         onClick={() => handleRemoveParticipantRow(idx)}
-                        disabled={manualParticipants.length === 1}
-                        className="p-1.5 text-stone-400 hover:text-red-700 hover:bg-red-50 disabled:opacity-20 rounded-lg transition-colors"
-                        title="સભ્ય કાઢી નાખો"
+                        className="p-1.5 text-stone-400 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                        title={manualParticipants.length > 4 ? 'સભ્ય કાઢી નાખો (Delete Row)' : 'નામ ખાલી કરો (Clear)'}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -559,14 +597,14 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                 <button
                   type="button"
                   onClick={handleAddParticipantRow}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-amber-900 bg-amber-100 hover:bg-amber-200 rounded-lg transition-colors border border-amber-300/80 shadow-2xs"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-amber-900 bg-amber-100 hover:bg-amber-200 rounded-lg transition-colors border border-amber-300/80 shadow-2xs cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>વધુ સભ્ય ઉમેરો (Add Member Row)</span>
                 </button>
 
-                <p className="text-[11px] text-stone-500">
-                  નિયમ: એક વ્યક્તિ સમગ્ર મહોત્સવમાં માત્ર ૧ જ કાર્યક્રમમાં ભાગ લઈ શકશે.
+                <p className="text-[11px] text-stone-600 font-medium">
+                  નિયમ: લઘુત્તમ ૪ સભ્યો જરૂરી. એક વ્યક્તિ સમગ્ર મહોત્સવમાં માત્ર ૧ જ કાર્યક્રમમાં ભાગ લઈ શકશે.
                 </p>
               </div>
             </div>

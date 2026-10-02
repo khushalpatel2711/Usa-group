@@ -57,10 +57,10 @@ export const NoticeBoard: React.FC<NoticeBoardProps> = ({ lang }) => {
                 નાટક હશે તો તેની મર્યાદા વિષય અનુસાર સાંસ્કૃતિક સમિતિ પાસે થી પાસ કરવાની રહેશે.
               </span>
               <span className="block text-red-700 font-bold text-xs sm:text-sm mt-0.5">
-                ( સોલો ડાન્સ લેવામાં આવશે નહીં )
+                ( સોલો ડાન્સ લેવામાં આવશે નહીં · કાર્યક્રમમાં ઓછામાં ઓછા ૪ કે તેથી વધુ સભ્યો હોવા ફરજિયાત છે )
               </span>
               <p className="text-xs text-stone-600 mt-0.5">
-                (Drama scripts must be pre-approved by the committee. Solo dance is strictly not permitted.)
+                (Drama scripts must be pre-approved by the committee. Solo dance is strictly not permitted. Minimum 4 and above members required.)
               </p>
             </div>
           </div>
